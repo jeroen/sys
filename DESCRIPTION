@@ -1,0 +1,13 @@
+Package: sys
+Type: Package
+Title: System Utilities
+Version: 0.1
+Author: Jeroen
+Maintainer: The package maintainer <yourself@somewhere.net>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 5.0.1.9000
