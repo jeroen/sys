@@ -28,7 +28,7 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
     //close all file descriptors before exit, otherwise they can segfault
-    for (int i = 0; i < 4096; i++) close(i);
+    for (int i = 0; i < sysconf(_SC_OPEN_MAX); i++) close(i);
 
     // picked up by WTERMSIG() below in parent proc
     raise(SIGILL);
