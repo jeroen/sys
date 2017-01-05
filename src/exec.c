@@ -26,7 +26,12 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
   //this happens in the child
   if(pid == 0){
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
-    raise(SIGILL); // picked up by WTERMSIG() below in parent proc
+
+    //close all file descriptors before exit, otherwise they can segfault
+    for (int i = 0; i < 4096; i++) close(i);
+
+    // picked up by WTERMSIG() below in parent proc
+    raise(SIGILL);
     //exit(0); //now allowed by CRAN. raise() should suffice anyway
   }
 
