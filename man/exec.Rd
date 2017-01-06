@@ -26,3 +26,4 @@ The \code{exec_with_pid} function returns immediately with the PID
 of the child program. In this case the state of the child is unknown.
 You should kill it manually with \link[tools:pskill]{tools::pskill}.
 }
+

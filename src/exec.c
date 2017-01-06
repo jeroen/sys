@@ -26,6 +26,12 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
 
   //this happens in the child
   if(pid == 0){
+    setpgid(0, 0); //prevents signals from being propagated to fork
+
+    //TODO: let user specify connection
+    close(STDIN_FILENO);
+    //close(STDOUT_FILENO);
+    //close(STDERR_FILENO);
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
     //close all file descriptors before exit, otherwise they can segfault
