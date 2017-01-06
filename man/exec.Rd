@@ -15,9 +15,14 @@ exec_with_pid(cmd, args = NULL)
 \item{args}{character vector of arguments to pass}
 }
 \description{
-The \code{exec_with_wait} function runs a program and returns the status code
-of the child program. Negative codes indicates the program was terminated
-by a SIGNAL. The \code{exec_with_pid} function returns immediately with the PID
-of the child program. In this case the state of the child is unknown.
+Flexible replacements for \link[base:system2]{base::system2}.
 }
+\details{
+The \code{exec_with_wait} function runs a program and returns the status code
+of the child program. Returns if the process completes (either with success
+or error) but raises an error if the process is terminated by a SIGNAL.
 
+The \code{exec_with_pid} function returns immediately with the PID
+of the child program. In this case the state of the child is unknown.
+You should kill it manually with \link[tools:pskill]{tools::pskill}.
+}

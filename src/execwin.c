@@ -36,7 +36,7 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
-  if(!CreateProcess(cmd, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+  if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
     Rf_errorcall(R_NilValue, "CreateProcess failed for %s", cmd);
 
   //CloseHandle(pi.hThread);
