@@ -12,7 +12,17 @@ int pending_interrupt() {
   return !(R_ToplevelExec(check_interrupt_fn, NULL));
 }
 
+BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
+  DWORD pid = (DWORD)lpid;
+  DWORD win;
+  GetWindowThreadProcessId(hWnd, &win);
+  if(pid == win)
+    CloseWindow(hWnd);
+  return TRUE;
+}
+
 SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
+  SECURITY_ATTRIBUTES sa;
   PROCESS_INFORMATION pi = {0};
   STARTUPINFO si = {0};
   si.cb = sizeof(STARTUPINFO);
@@ -23,25 +33,33 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
     strcat(argv, CHAR(STRING_ELT(args, i)));
     strcat(argv, " ");
   }
-  if(!CreateProcess(cmd, argv, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+  sa.nLength = sizeof(sa);
+  sa.lpSecurityDescriptor = NULL;
+  sa.bInheritHandle = TRUE;
+  if(!CreateProcess(cmd, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
     Rf_errorcall(R_NilValue, "CreateProcess failed for %s", cmd);
 
-  CloseHandle(pi.hThread);
-  DWORD dwPid = GetProcessId(pi.hProcess);
-  HANDLE ff = pi.hProcess;
+  //CloseHandle(pi.hThread);
+  DWORD pid = GetProcessId(pi.hProcess);
+  HANDLE proc = pi.hProcess;
+  HANDLE thread = pi.hThread;
   if(asLogical(wait)){
-    while (WAIT_TIMEOUT == WaitForSingleObject(ff, 500)) {
+    while (WAIT_TIMEOUT == WaitForSingleObject(proc, 500)) {
       if(pending_interrupt()){
-        if(!TerminateProcess(ff, -2))
+        EnumWindows(closeWindows, pid);
+        if(!TerminateThread(thread, 99))
+          Rf_errorcall(R_NilValue, "TerminateThread failed %d", GetLastError());
+        if(!TerminateProcess(proc, 99))
           Rf_errorcall(R_NilValue, "TerminateProcess failed: %d", GetLastError());
       }
     }
     DWORD exit_code;
-    GetExitCodeProcess(ff, &exit_code);
+    GetExitCodeProcess(proc, &exit_code);
     return ScalarInteger(exit_code);
   }
-  CloseHandle(ff);
-  return ScalarInteger(dwPid);
+  CloseHandle(thread);
+  CloseHandle(proc);
+  return ScalarInteger(pid);
 
 }
 #endif
