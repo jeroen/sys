@@ -55,6 +55,8 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
     }
     DWORD exit_code;
     GetExitCodeProcess(proc, &exit_code);
+    CloseHandle(thread);
+    CloseHandle(proc);
     return ScalarInteger(exit_code);
   }
   CloseHandle(thread);
