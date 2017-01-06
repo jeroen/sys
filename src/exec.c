@@ -32,6 +32,8 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
     close(STDIN_FILENO);
     //close(STDOUT_FILENO);
     //close(STDERR_FILENO);
+
+    //execvp never returns if successful
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
     //close all file descriptors before exit, otherwise they can segfault
