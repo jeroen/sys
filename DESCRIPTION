@@ -1,11 +1,11 @@
 Package: sys
 Type: Package
-Title: System Utilities
+Title: Portable System Utilities
 Version: 0.1
-Author: Jeroen
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Author: Jeroen Ooms
+Maintainer: Jeroen Ooms <jeroen.ooms@stat.ucla.edu>
+Description: Includes a flexible replacements for base::system2 to
+    execute system commands.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
