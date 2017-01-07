@@ -15,17 +15,20 @@ int pending_interrupt() {
 }
 
 SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
+  //split process
   pid_t pid = fork();
-  int len = Rf_length(args);
-  const char * argv[len + 1];
-  argv[len] = NULL;
-  for(int i = 0; i < len; i++){
-    argv[i] = Rf_translateCharUTF8(STRING_ELT(args, i));
-  }
 
   //this happens in the child
   if(pid == 0){
     setpgid(0, 0); //prevents signals from being propagated to fork
+
+    //prepare execv
+    int len = Rf_length(args);
+    const char * argv[len + 1];
+    argv[len] = NULL;
+    for(int i = 0; i < len; i++){
+      argv[i] = Rf_translateCharUTF8(STRING_ELT(args, i));
+    }
 
     //TODO: let user specify connection
     close(STDIN_FILENO);
@@ -64,7 +67,7 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
       if(signal == SIGILL)
         Rf_errorcall(R_NilValue, "Failed to execute '%s'! Invalid path?", CHAR(STRING_ELT(command, 0)));
       if(signal != 0)
-        Rf_errorcall(R_NilValue, "Program '%s' terminated prematurely with SIGNAL %s", CHAR(STRING_ELT(command, 0)), strsignal(signal));
+        Rf_errorcall(R_NilValue, "Program '%s' terminated by SIGNAL (%s)", CHAR(STRING_ELT(command, 0)), strsignal(signal));
       return ScalarInteger(-1 * WTERMSIG(status));
     }
   }
