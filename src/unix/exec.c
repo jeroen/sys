@@ -68,7 +68,7 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
         Rf_errorcall(R_NilValue, "Failed to execute '%s'! Invalid path?", CHAR(STRING_ELT(command, 0)));
       if(signal != 0)
         Rf_errorcall(R_NilValue, "Program '%s' terminated by SIGNAL (%s)", CHAR(STRING_ELT(command, 0)), strsignal(signal));
-      return ScalarInteger(-1 * WTERMSIG(status));
+      Rf_errorcall(R_NilValue, "Program terminated abnormally");
     }
   }
   return ScalarInteger(pid);
