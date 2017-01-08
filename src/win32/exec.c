@@ -35,13 +35,21 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
-  if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+  if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED, NULL, NULL, &si, &pi))
     Rf_errorcall(R_NilValue, "CreateProcess failed for %s", cmd);
 
   //CloseHandle(pi.hThread);
   DWORD pid = GetProcessId(pi.hProcess);
   HANDLE proc = pi.hProcess;
   HANDLE thread = pi.hThread;
+
+  //A 'job' is sort of a process group
+  //TO DO: Requires JOB_OBJECT_ASSIGN_PROCESS
+  HANDLE job = CreateJobObject(NULL, NULL);
+  if(!AssignProcessToJobObject(job, proc))
+    Rf_errorcall(R_NilValue, "AssignProcessToJobObject failed: %d", GetLastError());
+  ResumeThread(thread);
+
   if(asLogical(wait)){
     while (WAIT_TIMEOUT == WaitForSingleObject(proc, 500)) {
       if(pending_interrupt()){
@@ -50,6 +58,8 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
           Rf_errorcall(R_NilValue, "TerminateThread failed %d", GetLastError());
         if(!TerminateProcess(proc, 99))
           Rf_errorcall(R_NilValue, "TerminateProcess failed: %d", GetLastError());
+        if(!TerminateJobObject(job, 99))
+          Rf_errorcall(R_NilValue, "TerminateJobObject failed: %d", GetLastError());
       }
     }
     DWORD exit_code;
