@@ -66,10 +66,12 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
     GetExitCodeProcess(proc, &exit_code);
     CloseHandle(thread);
     CloseHandle(proc);
+    CloseHandle(job);
     return ScalarInteger(exit_code);
   }
   CloseHandle(thread);
   CloseHandle(proc);
+  CloseHandle(job);
   return ScalarInteger(pid);
 
 }
