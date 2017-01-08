@@ -1,4 +1,3 @@
-#ifdef _WIN32
 #include <Rinternals.h>
 #include <windows.h>
 
@@ -64,4 +63,3 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
   return ScalarInteger(pid);
 
 }
-#endif
