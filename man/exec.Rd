@@ -14,6 +14,10 @@ exec_with_pid(cmd, args = NULL, stdout = "", stderr = "")
 which exists in the \code{PATH}.}
 
 \item{args}{character vector of arguments to pass}
+
+\item{stdout}{file path to redirect \code{STDOUT}, same as \link{system2}.}
+
+\item{stderr}{file path to redirect \code{STDERR}, same as \link{system2}.}
 }
 \description{
 Flexible and robust replacements for \link[base:system2]{base::system2}.

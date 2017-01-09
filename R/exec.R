@@ -18,6 +18,8 @@
 #' @param cmd the command to run. Eiter a full path or the name of a program
 #' which exists in the `PATH`.
 #' @param args character vector of arguments to pass
+#' @param stdout file path to redirect `STDOUT`, same as [system2].
+#' @param stderr file path to redirect `STDERR`, same as [system2].
 exec_with_wait <- function(cmd, args = NULL, stdout = "", stderr = ""){
   exec_internal(cmd, args, stdout, stderr, wait = TRUE)
 }
