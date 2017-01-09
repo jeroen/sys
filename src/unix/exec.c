@@ -28,15 +28,15 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP w
     close(STDIN_FILENO);
 
     // make STDOUT go to file
-    if(!Rf_length(stdout)){
+    if(!Rf_length(outfile)){
       close(STDOUT_FILENO);
-    } else if(Rf_isString(stdout) && Rf_length(STRING_ELT(stdout, 0))){
-      const char * file = CHAR(STRING_ELT(stdout, 0));
+    } else if(Rf_isString(outfile) && Rf_length(STRING_ELT(outfile, 0))){
+      const char * file = CHAR(STRING_ELT(outfile, 0));
       int fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
       dup2(fd, STDOUT_FILENO);
       close(fd);
-    } else if(Rf_isLogical(stdout)){
-      if(asLogical(stdout)){
+    } else if(Rf_isLogical(outfile)){
+      if(asLogical(outfile)){
         //TODO: stdout = TRUE
       } else {
         close(STDOUT_FILENO);
