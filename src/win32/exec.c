@@ -11,6 +11,13 @@ int pending_interrupt() {
   return !(R_ToplevelExec(check_interrupt_fn, NULL));
 }
 
+/* Create FD in Windows */
+HANDLE fd(const char * path){
+  DWORD dwFlags = FILE_ATTRIBUTE_NORMAL;
+  return CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                    NULL, CREATE_ALWAYS, dwFlags, NULL);
+}
+
 BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
   DWORD pid = (DWORD)lpid;
   DWORD win;
