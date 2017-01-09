@@ -13,9 +13,12 @@ int pending_interrupt() {
 
 /* Create FD in Windows */
 HANDLE fd(const char * path){
+  SECURITY_ATTRIBUTES sa;
+  sa.lpSecurityDescriptor = NULL;
+  sa.bInheritHandle = TRUE;
   DWORD dwFlags = FILE_ATTRIBUTE_NORMAL;
   return CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                    NULL, CREATE_ALWAYS, dwFlags, NULL);
+                    &sa, CREATE_ALWAYS, dwFlags, NULL);
 }
 
 BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
@@ -28,19 +31,58 @@ BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
 }
 
 SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP wait){
-  SECURITY_ATTRIBUTES sa;
   PROCESS_INFORMATION pi = {0};
   STARTUPINFO si = {0};
   si.cb = sizeof(STARTUPINFO);
-  //si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-  //si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-  //si.dwFlags |= STARTF_USESTDHANDLES;
+  si.dwFlags |= STARTF_USESTDHANDLES;
+
+  // make STDOUT go to file
+  int has_outfile = 0;
+  if(!Rf_length(outfile)){
+    si.hStdOutput = NULL;
+  } else if(Rf_isString(outfile)){
+    const char * path = CHAR(STRING_ELT(outfile, 0));
+    if(strlen(path)){
+      has_outfile = 1;
+      si.hStdOutput = fd(path);
+    } else {
+      si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    }
+  } else if(Rf_isLogical(outfile)){
+    if(asLogical(outfile)){
+      //TODO: outfile = TRUE
+    } else {
+      si.hStdOutput = NULL;
+    }
+  }
+
+  // make STDERR go to file
+  int has_errfile = 0;
+  if(!Rf_length(errfile)){
+    si.hStdError = NULL;
+  } else if(Rf_isString(errfile)){
+    const char * path = CHAR(STRING_ELT(errfile, 0));
+    if(strlen(path)){
+      has_errfile = 1;
+      si.hStdError = fd(path);
+    } else {
+      si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    }
+  } else if(Rf_isLogical(errfile)){
+    if(asLogical(errfile)){
+      //TODO: errfile = TRUE
+    } else {
+      si.hStdError = NULL;
+    }
+  }
+
   const char * cmd = CHAR(STRING_ELT(command, 0));
   char argv[MAX_PATH] = "";
   for(int i = 0; i < Rf_length(args); i++){
     strcat(argv, CHAR(STRING_ELT(args, i)));
     strcat(argv, " ");
   }
+  SECURITY_ATTRIBUTES sa;
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
@@ -77,10 +119,18 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP w
     GetExitCodeProcess(proc, &exit_code);
     CloseHandle(proc);
     CloseHandle(job);
+    if(has_errfile)
+      CloseHandle(si.hStdError);
+    if(has_outfile)
+      CloseHandle(si.hStdOutput);
     return ScalarInteger(exit_code);
   }
   CloseHandle(proc);
   CloseHandle(job);
+  if(has_errfile)
+    CloseHandle(si.hStdError);
+  if(has_outfile)
+    CloseHandle(si.hStdOutput);
   return ScalarInteger(pid);
 
 }
