@@ -5,9 +5,9 @@
 \alias{exec_with_pid}
 \title{Execute a program}
 \usage{
-exec_with_wait(cmd, args = NULL)
+exec_with_wait(cmd, args = NULL, stdout = "", stderr = "")
 
-exec_with_pid(cmd, args = NULL)
+exec_with_pid(cmd, args = NULL, stdout = "", stderr = "")
 }
 \arguments{
 \item{cmd}{the command to run. Eiter a full path or the name of a program
@@ -30,3 +30,4 @@ of the child program. In this case the state of the child is unknown.
 You should kill it manually with \link[tools:pskill]{tools::pskill}. This is useful for running
 a server daemon or background process.
 }
+

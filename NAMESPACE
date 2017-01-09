@@ -2,4 +2,4 @@
 
 export(exec_with_pid)
 export(exec_with_wait)
-useDynLib(sys,C_run_with_pid)
+useDynLib(sys,C_exec_internal)
