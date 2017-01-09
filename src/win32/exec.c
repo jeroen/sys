@@ -25,6 +25,9 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP w
   PROCESS_INFORMATION pi = {0};
   STARTUPINFO si = {0};
   si.cb = sizeof(STARTUPINFO);
+  si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+  si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+  si.dwFlags |= STARTF_USESTDHANDLES;
   const char * cmd = CHAR(STRING_ELT(command, 0));
   char argv[MAX_PATH] = "";
   for(int i = 0; i < Rf_length(args); i++){
