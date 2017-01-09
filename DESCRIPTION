@@ -4,8 +4,8 @@ Title: Portable System Utilities
 Version: 0.1
 Author: Jeroen Ooms
 Maintainer: Jeroen Ooms <jeroen.ooms@stat.ucla.edu>
-Description: Includes a flexible replacements for base::system2 to
-    execute system commands.
+Description: Robust and flexible replacements for base::system2 to run
+    system commands and background processes.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

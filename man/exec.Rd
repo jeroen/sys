@@ -10,20 +10,23 @@ exec_with_wait(cmd, args = NULL)
 exec_with_pid(cmd, args = NULL)
 }
 \arguments{
-\item{cmd}{the command to run}
+\item{cmd}{the command to run. Eiter a full path or the name of a program
+which exists in the \code{PATH}.}
 
 \item{args}{character vector of arguments to pass}
 }
 \description{
-Flexible replacements for \link[base:system2]{base::system2}.
+Flexible and robust replacements for \link[base:system2]{base::system2}.
 }
 \details{
-The \code{exec_with_wait} function runs a program and returns the status code
-of the child program. Returns if the process completes (either with success
-or error) but raises an error if the process is terminated by a SIGNAL.
+The \code{exec_with_wait} function runs a program and waits for it to complete.
+If the process completes (either with success or error) it returns the status
+code, but an error is raised when the process is terminated by a SIGNAL.
+The R user can interrupt the program by sending SIGINT (press ESC or CTRL+C)
+in which case the process tree is properly terminated.
 
 The \code{exec_with_pid} function returns immediately with the PID
 of the child program. In this case the state of the child is unknown.
-You should kill it manually with \link[tools:pskill]{tools::pskill}.
+You should kill it manually with \link[tools:pskill]{tools::pskill}. This is useful for running
+a server daemon or background process.
 }
-
