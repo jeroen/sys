@@ -101,6 +101,7 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP w
   ResumeThread(thread);
   CloseHandle(thread);
 
+  int res = pid;
   if(asLogical(wait)){
     while (WAIT_TIMEOUT == WaitForSingleObject(proc, 500)) {
       if(pending_interrupt()){
@@ -117,13 +118,7 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP w
     }
     DWORD exit_code;
     GetExitCodeProcess(proc, &exit_code);
-    CloseHandle(proc);
-    CloseHandle(job);
-    if(has_errfile)
-      CloseHandle(si.hStdError);
-    if(has_outfile)
-      CloseHandle(si.hStdOutput);
-    return ScalarInteger(exit_code);
+    res = exit_code; //if wait=TRUE, return exit code
   }
   CloseHandle(proc);
   CloseHandle(job);
@@ -131,6 +126,5 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP w
     CloseHandle(si.hStdError);
   if(has_outfile)
     CloseHandle(si.hStdOutput);
-  return ScalarInteger(pid);
-
+  return ScalarInteger(res);
 }
