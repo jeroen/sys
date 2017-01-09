@@ -25,9 +25,9 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP w
   PROCESS_INFORMATION pi = {0};
   STARTUPINFO si = {0};
   si.cb = sizeof(STARTUPINFO);
-  si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-  si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-  si.dwFlags |= STARTF_USESTDHANDLES;
+  //si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+  //si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+  //si.dwFlags |= STARTF_USESTDHANDLES;
   const char * cmd = CHAR(STRING_ELT(command, 0));
   char argv[MAX_PATH] = "";
   for(int i = 0; i < Rf_length(args); i++){
@@ -37,7 +37,7 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP w
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
-  if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED, NULL, NULL, &si, &pi))
+  if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED, NULL, NULL, &si, &pi))
     Rf_errorcall(R_NilValue, "CreateProcess failed for %s", cmd);
 
   //CloseHandle(pi.hThread);
