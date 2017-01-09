@@ -43,33 +43,33 @@ SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
   HANDLE proc = pi.hProcess;
   HANDLE thread = pi.hThread;
 
-  //A 'job' is sort of a process group
-  //TO DO: Requires JOB_OBJECT_ASSIGN_PROCESS
+  //A 'job' is some sort of process container
   HANDLE job = CreateJobObject(NULL, NULL);
   if(!AssignProcessToJobObject(job, proc))
     Rf_errorcall(R_NilValue, "AssignProcessToJobObject failed: %d", GetLastError());
   ResumeThread(thread);
+  CloseHandle(thread);
 
   if(asLogical(wait)){
     while (WAIT_TIMEOUT == WaitForSingleObject(proc, 500)) {
       if(pending_interrupt()){
         EnumWindows(closeWindows, pid);
+        if(!TerminateJobObject(job, -2))
+          Rf_errorcall(R_NilValue, "TerminateJobObject failed: %d", GetLastError());
+        /*** TerminateJobObject kills all procs and threads
         if(!TerminateThread(thread, 99))
           Rf_errorcall(R_NilValue, "TerminateThread failed %d", GetLastError());
         if(!TerminateProcess(proc, 99))
           Rf_errorcall(R_NilValue, "TerminateProcess failed: %d", GetLastError());
-        if(!TerminateJobObject(job, 99))
-          Rf_errorcall(R_NilValue, "TerminateJobObject failed: %d", GetLastError());
+        */
       }
     }
     DWORD exit_code;
     GetExitCodeProcess(proc, &exit_code);
-    CloseHandle(thread);
     CloseHandle(proc);
     CloseHandle(job);
     return ScalarInteger(exit_code);
   }
-  CloseHandle(thread);
   CloseHandle(proc);
   CloseHandle(job);
   return ScalarInteger(pid);
