@@ -86,7 +86,7 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP w
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
-  if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED, NULL, NULL, &si, &pi))
+  if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED, NULL, NULL, &si, &pi))
     Rf_errorcall(R_NilValue, "CreateProcess failed for %s", cmd);
 
   //CloseHandle(pi.hThread);
