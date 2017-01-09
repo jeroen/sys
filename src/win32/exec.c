@@ -20,7 +20,7 @@ BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
   return TRUE;
 }
 
-SEXP C_run_with_pid(SEXP command, SEXP args, SEXP wait){
+SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP wait){
   SECURITY_ATTRIBUTES sa;
   PROCESS_INFORMATION pi = {0};
   STARTUPINFO si = {0};

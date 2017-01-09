@@ -16,7 +16,7 @@ int pending_interrupt() {
   return !(R_ToplevelExec(check_interrupt_fn, NULL));
 }
 
-SEXP C_exec_internal(SEXP command, SEXP args, SEXP stdout, SEXP stderr, SEXP wait){
+SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP wait){
   //split process
   pid_t pid = fork();
 
@@ -44,16 +44,16 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP stdout, SEXP stderr, SEXP wai
     }
 
     // make STDERR go to file
-    if(!Rf_length(stderr)){
+    if(!Rf_length(errfile)){
       close(STDERR_FILENO);
-    } else if(Rf_isString(stderr) && Rf_length(STRING_ELT(stderr, 0))){
-      const char * file = CHAR(STRING_ELT(stderr, 0));
+    } else if(Rf_isString(errfile) && Rf_length(STRING_ELT(errfile, 0))){
+      const char * file = CHAR(STRING_ELT(errfile, 0));
       int fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
       dup2(fd, STDERR_FILENO);
       close(fd);
-    } else if(Rf_isLogical(stderr)){
-      if(asLogical(stderr)){
-        //TODO: stderr = TRUE
+    } else if(Rf_isLogical(errfile)){
+      if(asLogical(errfile)){
+        //TODO: errfile = TRUE
       } else {
         close(STDERR_FILENO);
       }
