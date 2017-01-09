@@ -26,8 +26,7 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfile, SEXP errfile, SEXP w
   STARTUPINFO si = {0};
   si.cb = sizeof(STARTUPINFO);
   const char * cmd = CHAR(STRING_ELT(command, 0));
-  char argv[MAX_PATH];
-  argv[0] = '\0';
+  char argv[MAX_PATH] = "";
   for(int i = 0; i < Rf_length(args); i++){
     strcat(argv, CHAR(STRING_ELT(args, i)));
     strcat(argv, " ");
