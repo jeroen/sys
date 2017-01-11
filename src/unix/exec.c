@@ -50,6 +50,9 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
     // close STDIN for fork
     close(STDIN_FILENO);
 
+    //close all file descriptors before exit, otherwise they can segfault
+    for (int i = 3; i < sysconf(_SC_OPEN_MAX); i++) close(i);
+
     //prepare execv
     int len = Rf_length(args);
     const char * argv[len + 1];
@@ -60,9 +63,6 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
 
     //execvp never returns if successful
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
-
-    //close all file descriptors before exit, otherwise they can segfault
-    for (int i = 0; i < sysconf(_SC_OPEN_MAX); i++) close(i);
 
     // picked up by WTERMSIG() below in parent proc
     raise(SIGILL);
@@ -86,7 +86,8 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
     //-1 means error, 0 means running
     while (waitpid(pid, &status, WNOHANG) >= 0){
       if(pending_interrupt()){
-        kill(pid, SIGINT); //pass interrupt to child
+        //pass interrupt to child
+        kill(pid, SIGINT);
         //picked up below
       }
       //make sure to empty the pipes, even if fun == NULL
