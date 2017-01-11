@@ -5,9 +5,9 @@
 \alias{exec_with_pid}
 \title{Execute a program}
 \usage{
-exec_with_wait(cmd, args = NULL, stdout = "", stderr = "")
+exec_with_wait(cmd, args = NULL, stdout = cat, stderr = cat)
 
-exec_with_pid(cmd, args = NULL, stdout = "", stderr = "")
+exec_with_pid(cmd, args = NULL, stdout = cat, stderr = cat)
 }
 \arguments{
 \item{cmd}{the command to run. Eiter a full path or the name of a program
@@ -15,9 +15,11 @@ which exists in the \code{PATH}.}
 
 \item{args}{character vector of arguments to pass}
 
-\item{stdout}{file path to redirect \code{STDOUT}, same as \link{system2}.}
+\item{stdout}{callback function to process \code{STDOUT} text, or a file path to
+pipe \code{STDOUT} to, or \code{NULL} to silence.}
 
-\item{stderr}{file path to redirect \code{STDERR}, same as \link{system2}.}
+\item{stderr}{callback function to process \code{STDERR} text, or a file path to
+pipe \code{STDERR} to, or \code{NULL} to silence.}
 }
 \description{
 Flexible and robust replacements for \link[base:system2]{base::system2}.

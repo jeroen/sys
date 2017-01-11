@@ -18,15 +18,17 @@
 #' @param cmd the command to run. Eiter a full path or the name of a program
 #' which exists in the `PATH`.
 #' @param args character vector of arguments to pass
-#' @param stdout file path to redirect `STDOUT`, same as [system2].
-#' @param stderr file path to redirect `STDERR`, same as [system2].
-exec_with_wait <- function(cmd, args = NULL, stdout = "", stderr = ""){
+#' @param stdout callback function to process `STDOUT` text, or a file path to
+#' pipe `STDOUT` to, or `NULL` to silence.
+#' @param stderr callback function to process `STDERR` text, or a file path to
+#' pipe `STDERR` to, or `NULL` to silence.
+exec_with_wait <- function(cmd, args = NULL, stdout = cat, stderr = cat){
   exec_internal(cmd, args, stdout, stderr, wait = TRUE)
 }
 
 #' @export
 #' @rdname exec
-exec_with_pid <- function(cmd, args = NULL, stdout = "", stderr = ""){
+exec_with_pid <- function(cmd, args = NULL, stdout = cat, stderr = cat){
   exec_internal(cmd, args, stdout, stderr, wait = FALSE)
 }
 
@@ -34,9 +36,38 @@ exec_with_pid <- function(cmd, args = NULL, stdout = "", stderr = ""){
 exec_internal <- function(cmd, args, stdout, stderr, wait){
   stopifnot(is.character(cmd))
   argv <- c(cmd, as.character(args))
+  if(is.character(stdout)){
+    outfile <- file(normalizePath(stdout, mustWork = FALSE), open = "w+")
+    on.exit(close(outfile))
+    stdout <- function(x){
+      writeLines(x, outfile)
+      flush(outfile)
+    }
+  }
+  if(is.character(stderr)){
+    errfile <- file(normalizePath(stderr, mustWork = FALSE), open = "w+")
+    on.exit(close(errfile))
+    stderr <- function(x){
+      writeLines(x, errfile)
+      flush(outfile)
+    }
+  }
   if(is.character(stdout))
     stdout <- normalizePath(stdout, mustWork = FALSE)
   if(is.character(stderr))
     stderr <- normalizePath(stderr, mustWork = FALSE)
   .Call(C_exec_internal, cmd, argv, stdout, stderr, wait)
+}
+
+make_callback <- function(x){
+  if(is.function(x))
+    return(x)
+  if(is.character(x)){
+    x <- normalizePath(x, mustWork = FALSE)
+    out <- file(x, open = "wt")
+    return(function(str){
+      writeLines(str, out)
+    })
+  }
+
 }
