@@ -39,6 +39,7 @@ exec_background <- function(cmd, args = NULL, stdout = cat, stderr = cat){
 #' @useDynLib sys C_exec_internal
 exec_internal <- function(cmd, args, stdout, stderr, wait){
   stopifnot(is.character(cmd))
+  stopifnot(is.logical(wait))
   argv <- c(cmd, as.character(args))
   if(is.character(stdout)){
     outfile <- file(normalizePath(stdout, mustWork = FALSE), open = "w+")
@@ -56,22 +57,5 @@ exec_internal <- function(cmd, args, stdout, stderr, wait){
       flush(outfile)
     }
   }
-  if(is.character(stdout))
-    stdout <- normalizePath(stdout, mustWork = FALSE)
-  if(is.character(stderr))
-    stderr <- normalizePath(stderr, mustWork = FALSE)
   .Call(C_exec_internal, cmd, argv, stdout, stderr, wait)
-}
-
-make_callback <- function(x){
-  if(is.function(x))
-    return(x)
-  if(is.character(x)){
-    x <- normalizePath(x, mustWork = FALSE)
-    out <- file(x, open = "wt")
-    return(function(str){
-      writeLines(str, out)
-    })
-  }
-
 }
