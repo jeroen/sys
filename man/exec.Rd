@@ -36,4 +36,8 @@ of the child program. In this case the state of the child is unknown.
 You should kill it manually with \link[tools:pskill]{tools::pskill}. This is useful for running
 a server daemon or background process.
 }
+\seealso{
+Base \link{system2} and \link{pipe} provide other methods for running a system
+command with output.
+}
 
