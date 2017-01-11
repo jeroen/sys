@@ -103,9 +103,11 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
 
   int res = pid;
   if(asLogical(wait)){
-    while (WAIT_TIMEOUT == WaitForSingleObject(proc, 200)) {
+    for(;;) {
       ReadFromPipe(outfun, pipe_out);
       ReadFromPipe(errfun, pipe_err);
+      if(WAIT_TIMEOUT != WaitForSingleObject(proc, 200))
+        break;
       if(pending_interrupt()){
         EnumWindows(closeWindows, pid);
         if(!TerminateJobObject(job, -2))
