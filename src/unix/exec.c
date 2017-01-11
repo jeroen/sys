@@ -110,5 +110,8 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
       Rf_errorcall(R_NilValue, "Program terminated abnormally");
     }
   }
+  //for exec_background
+  close(pipe_out[0]);
+  close(pipe_err[0]);
   return ScalarInteger(pid);
 }
