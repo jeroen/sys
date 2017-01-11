@@ -1,8 +1,7 @@
 #' Execute a program
 #'
-#' Flexible and robust replacements for [base::system2] / [base::pipe]. Output
-#' from the child process is piped back to R and can be used via `stdout` and
-#' `stderr` callback functions.
+#' Flexible replacements for [system2] / [pipe] which can pipe `stdout` / `stderr`
+#' output from the child process back to R via callback functions.
 #'
 #' The `exec_wait` function runs a system command and waits for it to complete.
 #' If the process completes (either with success or error) it returns the status

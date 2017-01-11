@@ -22,9 +22,8 @@ pipe \code{STDOUT} to, or \code{NULL} to silence.}
 pipe \code{STDERR} to, or \code{NULL} to silence.}
 }
 \description{
-Flexible and robust replacements for \link[base:system2]{base::system2} / \link[base:pipe]{base::pipe}. Output
-from the child process is piped back to R and can be used via \code{stdout} and
-\code{stderr} callback functions.
+Flexible replacements for \link{system2} / \link{pipe} which can pipe \code{stdout} / \code{stderr}
+output from the child process back to R via callback functions.
 }
 \details{
 The \code{exec_wait} function runs a system command and waits for it to complete.
