@@ -1,15 +1,17 @@
 #' Execute a program
 #'
-#' Flexible and robust replacements for [base::system2].
+#' Flexible and robust replacements for [base::system2] / [base::pipe]. Output
+#' from the child process is piped back to R and can be used via `stdout` and
+#' `stderr` callback functions.
 #'
-#' The `exec_with_wait` function runs a program and waits for it to complete.
+#' The `exec_wait` function runs a system command and waits for it to complete.
 #' If the process completes (either with success or error) it returns the status
 #' code, but an error is raised when the process is terminated by a SIGNAL.
-#' The R user can interrupt the program by sending SIGINT (press ESC or CTRL+C)
-#' in which case the process tree is properly terminated.
+#' The program can be interrupted by sending SIGINT (press ESC or CTRL+C) in
+#' which case the process tree is properly terminated.
 #'
-#' The `exec_with_pid` function returns immediately with the PID
-#' of the child program. In this case the state of the child is unknown.
+#' The `exec_background` function started the program and immediately returns the
+#' PID of the child process. In this case the state of the child is unknown.
 #' You should kill it manually with [tools::pskill]. This is useful for running
 #' a server daemon or background process.
 #'
@@ -24,13 +26,13 @@
 #' pipe `STDOUT` to, or `NULL` to silence.
 #' @param stderr callback function to process `STDERR` text, or a file path to
 #' pipe `STDERR` to, or `NULL` to silence.
-exec_with_wait <- function(cmd, args = NULL, stdout = cat, stderr = cat){
+exec_wait <- function(cmd, args = NULL, stdout = cat, stderr = cat){
   exec_internal(cmd, args, stdout, stderr, wait = TRUE)
 }
 
 #' @export
 #' @rdname exec
-exec_with_pid <- function(cmd, args = NULL, stdout = cat, stderr = cat){
+exec_background <- function(cmd, args = NULL, stdout = cat, stderr = cat){
   exec_internal(cmd, args, stdout, stderr, wait = FALSE)
 }
 
@@ -54,5 +56,22 @@ exec_internal <- function(cmd, args, stdout, stderr, wait){
       flush(outfile)
     }
   }
+  if(is.character(stdout))
+    stdout <- normalizePath(stdout, mustWork = FALSE)
+  if(is.character(stderr))
+    stderr <- normalizePath(stderr, mustWork = FALSE)
   .Call(C_exec_internal, cmd, argv, stdout, stderr, wait)
+}
+
+make_callback <- function(x){
+  if(is.function(x))
+    return(x)
+  if(is.character(x)){
+    x <- normalizePath(x, mustWork = FALSE)
+    out <- file(x, open = "wt")
+    return(function(str){
+      writeLines(str, out)
+    })
+  }
+
 }
