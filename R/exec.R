@@ -26,12 +26,32 @@
 #' @param stderr callback function to process `STDERR` text, or a file path to
 #' pipe `STDERR` to, or `NULL` to silence.
 exec_wait <- function(cmd, args = NULL, stdout = cat, stderr = cat){
+  if(is.character(stdout)){
+    outfile <- file(normalizePath(stdout, mustWork = FALSE), open = "w+")
+    on.exit(close(outfile), add = TRUE)
+    stdout <- function(x){
+      cat(x, file = outfile)
+      flush(outfile)
+    }
+  }
+  if(is.character(stderr)){
+    errfile <- file(normalizePath(stderr, mustWork = FALSE), open = "w+")
+    on.exit(close(errfile), add = TRUE)
+    stderr <- function(x){
+      cat(x, file = errfile)
+      flush(outfile)
+    }
+  }
   exec_internal(cmd, args, stdout, stderr, wait = TRUE)
 }
 
 #' @export
 #' @rdname exec
-exec_background <- function(cmd, args = NULL, stdout = cat, stderr = cat){
+exec_background <- function(cmd, args = NULL, stdout = NULL, stderr = NULL){
+  if(length(stdout))
+    stopifnot(is.character(stdout))
+  if(length(stderr))
+    stopifnot(is.character(stderr))
   exec_internal(cmd, args, stdout, stderr, wait = FALSE)
 }
 
@@ -40,21 +60,5 @@ exec_internal <- function(cmd, args, stdout, stderr, wait){
   stopifnot(is.character(cmd))
   stopifnot(is.logical(wait))
   argv <- c(cmd, as.character(args))
-  if(is.character(stdout)){
-    outfile <- file(normalizePath(stdout, mustWork = FALSE), open = "w+")
-    on.exit(close(outfile))
-    stdout <- function(x){
-      writeLines(x, outfile)
-      flush(outfile)
-    }
-  }
-  if(is.character(stderr)){
-    errfile <- file(normalizePath(stderr, mustWork = FALSE), open = "w+")
-    on.exit(close(errfile))
-    stderr <- function(x){
-      writeLines(x, errfile)
-      flush(outfile)
-    }
-  }
   .Call(C_exec_internal, cmd, argv, stdout, stderr, wait)
 }

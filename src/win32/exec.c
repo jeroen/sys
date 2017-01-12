@@ -61,21 +61,28 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
   STARTUPINFO si = {0};
   si.cb = sizeof(STARTUPINFO);
   si.dwFlags |= STARTF_USESTDHANDLES;
-
-  //make STDOUT pipe
   HANDLE pipe_out = NULL;
-  if (!CreatePipe(&pipe_out, &si.hStdOutput, &sa, 0))
-    Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
-  if (!SetHandleInformation(pipe_out, HANDLE_FLAG_INHERIT, 0))
-    Rf_errorcall(R_NilValue, "SetHandleInformation failed");
-
-
-  //make STDERR pipe
   HANDLE pipe_err = NULL;
-  if (!CreatePipe(&pipe_err, &si.hStdError, &sa, 0))
-    Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
-  if (!SetHandleInformation(pipe_err, HANDLE_FLAG_INHERIT, 0))
-    Rf_errorcall(R_NilValue, "SetHandleInformation failed");
+
+  if(block){
+    //make STDOUT pipe
+    if (!CreatePipe(&pipe_out, &si.hStdOutput, &sa, 0))
+      Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
+    if (!SetHandleInformation(pipe_out, HANDLE_FLAG_INHERIT, 0))
+      Rf_errorcall(R_NilValue, "SetHandleInformation failed");
+
+
+    //make STDERR pipe
+    if (!CreatePipe(&pipe_err, &si.hStdError, &sa, 0))
+      Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
+    if (!SetHandleInformation(pipe_err, HANDLE_FLAG_INHERIT, 0))
+      Rf_errorcall(R_NilValue, "SetHandleInformation failed");
+  } else {
+    if(Rf_isString(outfun))
+      si.hStdOutput = fd(CHAR(STRING_ELT(outfun, 0)));
+    if(Rf_isString(errfun))
+      si.hStdError = fd(CHAR(STRING_ELT(errfun, 0)));
+  }
 
   //make command
   const char * cmd = CHAR(STRING_ELT(command, 0));
@@ -101,29 +108,32 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
   CloseHandle(thread);
 
   int res = pid;
-  while(block){
-    block = WaitForSingleObject(proc, 200);
-    ReadFromPipe(outfun, pipe_out);
-    ReadFromPipe(errfun, pipe_err);
-    if(pending_interrupt()){
-      EnumWindows(closeWindows, pid);
-      if(!TerminateJobObject(job, -2))
-        Rf_errorcall(R_NilValue, "TerminateJobObject failed: %d", GetLastError());
-      /*** TerminateJobObject kills all procs and threads
-      if(!TerminateThread(thread, 99))
-        Rf_errorcall(R_NilValue, "TerminateThread failed %d", GetLastError());
-      if(!TerminateProcess(proc, 99))
-        Rf_errorcall(R_NilValue, "TerminateProcess failed: %d", GetLastError());
-      */
+  if(block){
+    int running = 1;
+    while(running){
+      running = WaitForSingleObject(proc, 200);
+      ReadFromPipe(outfun, pipe_out);
+      ReadFromPipe(errfun, pipe_err);
+      if(pending_interrupt()){
+        EnumWindows(closeWindows, pid);
+        if(!TerminateJobObject(job, -2))
+          Rf_errorcall(R_NilValue, "TerminateJobObject failed: %d", GetLastError());
+        /*** TerminateJobObject kills all procs and threads
+        if(!TerminateThread(thread, 99))
+          Rf_errorcall(R_NilValue, "TerminateThread failed %d", GetLastError());
+        if(!TerminateProcess(proc, 99))
+          Rf_errorcall(R_NilValue, "TerminateProcess failed: %d", GetLastError());
+        */
+      }
     }
     DWORD exit_code;
+    CloseHandle(pipe_out);
+    CloseHandle(pipe_err);
     GetExitCodeProcess(proc, &exit_code);
     res = exit_code; //if wait=TRUE, return exit code
   }
   CloseHandle(proc);
   CloseHandle(job);
-  CloseHandle(pipe_out);
-  CloseHandle(pipe_err);
   CloseHandle(si.hStdError);
   CloseHandle(si.hStdOutput);
   return ScalarInteger(res);
