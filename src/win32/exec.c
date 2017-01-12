@@ -27,10 +27,8 @@ void ReadFromPipe(SEXP fun, HANDLE pipe){
   if(len > 0){
     char buffer[len];
     unsigned long outlen;
-    if(ReadFile(pipe, buffer, len, &outlen, NULL)){
-      if(len > 0)
-        R_callback(fun, buffer, outlen);
-    }
+    if(ReadFile(pipe, buffer, len, &outlen, NULL))
+      R_callback(fun, buffer, outlen);
   }
 }
 
