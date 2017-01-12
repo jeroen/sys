@@ -1,18 +1,21 @@
-#' Execute a program
+#' Run a system command
 #'
-#' Flexible replacements for [system2] / [pipe] which can pipe `stdout` / `stderr`
-#' output from the child process back to R via callback functions.
+#' Flexible replacements for [system2] / [pipe] with support for interruptions,
+#' background tasks and proper control over `stdout` / `stderr` streams.
 #'
-#' The `exec_wait` function runs a system command and waits for it to complete.
-#' If the process completes (either with success or error) it returns the status
-#' code, but an error is raised when the process is terminated by a SIGNAL.
-#' The program can be interrupted by sending SIGINT (press ESC or CTRL+C) in
-#' which case the process tree is properly terminated.
+#' The `exec_wait` function runs a system command and waits for the child process
+#' to exit. The `STDOUT` and `STDERR` streams are piped back to the parent process
+#' and can be read via a connection or callback funtion. If the child process completes
+#' normally (either success or error) `exec_wait` returns the program exit code. An
+#' On the other hand, when the child process is terminated by a SIGNAL, an error is
+#' raised in R. The program can be interrupted by the R user by sending SIGINT (press
+#' ESC or CTRL+C) in which case the child process tree is properly terminated.
 #'
-#' The `exec_background` function started the program and immediately returns the
-#' PID of the child process. In this case the state of the child is unknown.
-#' You should kill it manually with [tools::pskill]. This is useful for running
-#' a server daemon or background process.
+#' The `exec_background` function starts the program and immediately returns the
+#' PID of the child process. Here `std_out` and `std_out` can only be `NULL` or a
+#' file path. The state of the child is unknown to R, a child process can be killed
+#' manually with [tools::pskill]. This is useful for running a server daemon or
+#' background process.
 #'
 #' @export
 #' @seealso Base [system2] and [pipe] provide other methods for running a system
@@ -21,44 +24,48 @@
 #' @param cmd the command to run. Eiter a full path or the name of a program
 #' which exists in the `PATH`.
 #' @param args character vector of arguments to pass
-#' @param stdout callback function to process `STDOUT` text, or a file path to
-#' pipe `STDOUT` to, or `NULL` to silence.
-#' @param stderr callback function to process `STDERR` text, or a file path to
-#' pipe `STDERR` to, or `NULL` to silence.
-exec_wait <- function(cmd, args = NULL, stdout = cat, stderr = cat){
-  if(is.character(stdout)){
-    outfile <- file(normalizePath(stdout, mustWork = FALSE), open = "w+")
-    on.exit(close(outfile), add = TRUE)
-    stdout <- function(x){
-      cat(x, file = outfile)
-      flush(outfile)
+#' @param std_out filename to redirect program `STDOUT` stream. For `exec_wait` this may
+#' also be a connection or callback function.
+#' @param std_err filename to redirect program `STDERR` stream. For `exec_wait` this may
+#' also be a connection or callback function.
+exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
+  if(is.character(std_out)){
+    std_out <- file(normalizePath(std_out, mustWork = FALSE), open = "w+")
+    on.exit(close(std_out), add = TRUE)
+  }
+  if(is.character(std_err)){
+    std_err <- file(normalizePath(std_err, mustWork = FALSE), open = "w+")
+    on.exit(close(std_err), add = TRUE)
+  }
+  outfun <- if(inherits(std_out, "connection")){
+    function(x){
+      cat(x, file = std_out)
+      flush(std_out)
     }
   }
-  if(is.character(stderr)){
-    errfile <- file(normalizePath(stderr, mustWork = FALSE), open = "w+")
-    on.exit(close(errfile), add = TRUE)
-    stderr <- function(x){
-      cat(x, file = errfile)
-      flush(outfile)
+  errfun <- if(inherits(std_err, "connection")){
+    function(x){
+      cat(x, file = std_err)
+      flush(std_err)
     }
   }
-  exec_internal(cmd, args, stdout, stderr, wait = TRUE)
+  exec_internal(cmd, args, outfun, errfun, wait = TRUE)
 }
 
 #' @export
 #' @rdname exec
-exec_background <- function(cmd, args = NULL, stdout = NULL, stderr = NULL){
-  if(length(stdout))
-    stopifnot(is.character(stdout))
-  if(length(stderr))
-    stopifnot(is.character(stderr))
-  exec_internal(cmd, args, stdout, stderr, wait = FALSE)
+exec_background <- function(cmd, args = NULL, std_out = NULL, std_err = NULL){
+  if(length(std_out))
+    stopifnot(is.character(std_out))
+  if(length(std_err))
+    stopifnot(is.character(std_err))
+  exec_internal(cmd, args, std_out, std_err, wait = FALSE)
 }
 
 #' @useDynLib sys C_exec_internal
-exec_internal <- function(cmd, args, stdout, stderr, wait){
+exec_internal <- function(cmd, args, std_out, std_err, wait){
   stopifnot(is.character(cmd))
   stopifnot(is.logical(wait))
   argv <- c(cmd, as.character(args))
-  .Call(C_exec_internal, cmd, argv, stdout, stderr, wait)
+  .Call(C_exec_internal, cmd, argv, std_out, std_err, wait)
 }

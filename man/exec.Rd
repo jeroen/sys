@@ -3,11 +3,11 @@
 \name{exec_wait}
 \alias{exec_wait}
 \alias{exec_background}
-\title{Execute a program}
+\title{Run a system command}
 \usage{
-exec_wait(cmd, args = NULL, stdout = cat, stderr = cat)
+exec_wait(cmd, args = NULL, std_out = stdout(), std_err = stderr())
 
-exec_background(cmd, args = NULL, stdout = cat, stderr = cat)
+exec_background(cmd, args = NULL, std_out = NULL, std_err = NULL)
 }
 \arguments{
 \item{cmd}{the command to run. Eiter a full path or the name of a program
@@ -15,27 +15,30 @@ which exists in the \code{PATH}.}
 
 \item{args}{character vector of arguments to pass}
 
-\item{stdout}{callback function to process \code{STDOUT} text, or a file path to
-pipe \code{STDOUT} to, or \code{NULL} to silence.}
+\item{std_out}{filename to redirect program \code{STDOUT} stream. For \code{exec_wait} this may
+also be a connection or callback function.}
 
-\item{stderr}{callback function to process \code{STDERR} text, or a file path to
-pipe \code{STDERR} to, or \code{NULL} to silence.}
+\item{std_err}{filename to redirect program \code{STDERR} stream. For \code{exec_wait} this may
+also be a connection or callback function.}
 }
 \description{
-Flexible replacements for \link{system2} / \link{pipe} which can pipe \code{stdout} / \code{stderr}
-output from the child process back to R via callback functions.
+Flexible replacements for \link{system2} / \link{pipe} with support for interruptions,
+background tasks and proper control over \code{stdout} / \code{stderr} streams.
 }
 \details{
-The \code{exec_wait} function runs a system command and waits for it to complete.
-If the process completes (either with success or error) it returns the status
-code, but an error is raised when the process is terminated by a SIGNAL.
-The program can be interrupted by sending SIGINT (press ESC or CTRL+C) in
-which case the process tree is properly terminated.
+The \code{exec_wait} function runs a system command and waits for the child process
+to exit. The \code{STDOUT} and \code{STDERR} streams are piped back to the parent process
+and can be read via a connection or callback funtion. If the child process completes
+normally (either success or error) \code{exec_wait} returns the program exit code. An
+On the other hand, when the child process is terminated by a SIGNAL, an error is
+raised in R. The program can be interrupted by the R user by sending SIGINT (press
+ESC or CTRL+C) in which case the child process tree is properly terminated.
 
-The \code{exec_background} function started the program and immediately returns the
-PID of the child process. In this case the state of the child is unknown.
-You should kill it manually with \link[tools:pskill]{tools::pskill}. This is useful for running
-a server daemon or background process.
+The \code{exec_background} function starts the program and immediately returns the
+PID of the child process. Here \code{std_out} and \code{std_out} can only be \code{NULL} or a
+file path. The state of the child is unknown to R, a child process can be killed
+manually with \link[tools:pskill]{tools::pskill}. This is useful for running a server daemon or
+background process.
 }
 \seealso{
 Base \link{system2} and \link{pipe} provide other methods for running a system

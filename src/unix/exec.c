@@ -26,23 +26,52 @@ void R_callback(SEXP fun, const char * buf, ssize_t len){
 
 SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   //split process
+  int block = asLogical(wait);
   int pipe_out[2];
   int pipe_err[2];
-  pipe(pipe_out);
-  pipe(pipe_err);
+
+  //create pipes only in blocking mode
+  if(block){
+    pipe(pipe_out);
+    pipe(pipe_err);
+  }
+
+  //fork the main process
   pid_t pid = fork();
+  if(pid < 0)
+    Rf_errorcall(R_NilValue, "Failed to fork");
 
-  //this happens in the child
+  //non blocking mode: return pid
+  if(!block && pid > 0){
+    return ScalarInteger(pid);
+  }
+
+  //CHILD PROCESS
   if(pid == 0){
-    // send stdout to the pipe
-    dup2(pipe_out[1], STDOUT_FILENO);
-    close(pipe_out[0]);
-    close(pipe_out[1]);
+    if(block){
+      // send stdout to the pipe
+      dup2(pipe_out[1], STDOUT_FILENO);
+      close(pipe_out[0]);
+      close(pipe_out[1]);
 
-    //send stderr to the pipe
-    dup2(pipe_err[1], STDERR_FILENO);
-    close(pipe_err[0]);
-    close(pipe_err[1]);
+      //send stderr to the pipe
+      dup2(pipe_err[1], STDERR_FILENO);
+      close(pipe_err[0]);
+      close(pipe_err[1]);
+    } else {
+      if(Rf_isString(outfun)){
+        const char * file = CHAR(STRING_ELT(outfun, 0));
+        int fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+        dup2(fd, STDOUT_FILENO);
+        close(fd);
+      }
+      if(Rf_isString(errfun)){
+        const char * file = CHAR(STRING_ELT(errfun, 0));
+        int fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+        dup2(fd, STDERR_FILENO);
+        close(fd);
+      }
+    }
 
     //prevents signals from being propagated to fork
     setpgid(0, 0);
@@ -69,49 +98,40 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
     //exit(0); //now allowed by CRAN. raise() should suffice anyway
   }
 
-  //something went wrong
-  if(pid < 0)
-    Rf_errorcall(R_NilValue, "Failed to fork");
-
-  //close write end of pipe in parent
-  char buffer[1024];
+  //PARENT PROCESS
   fcntl(pipe_out[0], F_SETFL, O_NONBLOCK);
   fcntl(pipe_err[0], F_SETFL, O_NONBLOCK);
+
+  //close write end of pipe
   close(pipe_out[1]);
   close(pipe_err[1]);
 
-  //remaining program
-  if(asLogical(wait)){
-    int status;
-    //-1 means error, 0 means running
-    while (waitpid(pid, &status, WNOHANG) >= 0){
-      if(pending_interrupt()){
-        //pass interrupt to child
-        kill(pid, SIGINT);
-        //picked up below
-      }
-      //make sure to empty the pipes, even if fun == NULL
-      ssize_t len;
-      while ((len = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
-        R_callback(outfun, buffer, len);
-      while ((len = read(pipe_err[0], buffer, sizeof(buffer))) > 0)
-        R_callback(errfun, buffer, len);
+  //status -1 means error, 0 means running
+  int status;
+  char buffer[1024];
+  while (waitpid(pid, &status, WNOHANG) >= 0){
+    if(pending_interrupt()){
+      //pass interrupt to child
+      kill(pid, SIGINT);
+      //picked up below
     }
-    close(pipe_out[0]);
-    close(pipe_err[0]);
-    if(WIFEXITED(status)){
-      return ScalarInteger(WEXITSTATUS(status));
-    } else {
-      int signal = WTERMSIG(status);
-      if(signal == SIGILL)
-        Rf_errorcall(R_NilValue, "Failed to execute '%s'! Invalid path?", CHAR(STRING_ELT(command, 0)));
-      if(signal != 0)
-        Rf_errorcall(R_NilValue, "Program '%s' terminated by SIGNAL (%s)", CHAR(STRING_ELT(command, 0)), strsignal(signal));
-      Rf_errorcall(R_NilValue, "Program terminated abnormally");
-    }
+    //make sure to empty the pipes, even if fun == NULL
+    ssize_t len;
+    while ((len = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
+      R_callback(outfun, buffer, len);
+    while ((len = read(pipe_err[0], buffer, sizeof(buffer))) > 0)
+      R_callback(errfun, buffer, len);
   }
-  //for exec_background
   close(pipe_out[0]);
   close(pipe_err[0]);
-  return ScalarInteger(pid);
+  if(WIFEXITED(status)){
+    return ScalarInteger(WEXITSTATUS(status));
+  } else {
+    int signal = WTERMSIG(status);
+    if(signal == SIGILL)
+      Rf_errorcall(R_NilValue, "Failed to execute '%s'! Invalid path?", CHAR(STRING_ELT(command, 0)));
+    if(signal != 0)
+      Rf_errorcall(R_NilValue, "Program '%s' terminated by SIGNAL (%s)", CHAR(STRING_ELT(command, 0)), strsignal(signal));
+    Rf_errorcall(R_NilValue, "Program terminated abnormally");
+  }
 }
