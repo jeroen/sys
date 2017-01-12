@@ -1,6 +1,7 @@
 #include <Rinternals.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
