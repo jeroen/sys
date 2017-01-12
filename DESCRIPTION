@@ -1,11 +1,11 @@
 Package: sys
 Type: Package
-Title: Portable System Utilities
+Title: System Utilities
 Version: 0.1
 Author: Jeroen Ooms
 Maintainer: Jeroen Ooms <jeroen.ooms@stat.ucla.edu>
-Description: Robust and flexible replacements for base::system2 to run
-    system commands and background processes.
+Description: Flexible replacements for base system2 / pipe with support for 
+    interruptions, background tasks, and fine control over output streams.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
