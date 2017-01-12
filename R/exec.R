@@ -38,7 +38,7 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
   outfun <- if(inherits(std_out, "connection")){
     if(!isOpen(std_out)){
       open(std_out, "w+")
-      on.exit(close(std_out, add = TRUE))
+      on.exit(close(std_out), add = TRUE)
     }
     function(x){
       cat(x, file = std_out)
@@ -48,7 +48,7 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
   errfun <- if(inherits(std_err, "connection")){
     if(!isOpen(std_err)){
       open(std_err, "w+")
-      on.exit(close(std_err, add = TRUE))
+      on.exit(close(std_err), add = TRUE)
     }
     function(x){
       cat(x, file = std_err)
