@@ -5,17 +5,17 @@
 #'
 #' The `exec_wait` function runs a system command and waits for the child process
 #' to exit. The `STDOUT` and `STDERR` streams are piped back to the parent process
-#' and can be read via a connection or callback funtion. If the child process completes
-#' normally (either success or error) `exec_wait` returns the program exit code. An
+#' and available as a connection or callback funtion. If the child process completes
+#' normally (either success or error) `exec_wait` returns the program exit code.
 #' On the other hand, when the child process is terminated by a SIGNAL, an error is
-#' raised in R. The program can be interrupted by the R user by sending SIGINT (press
+#' raised in R. The R user can interrupt the program by sending SIGINT (press
 #' ESC or CTRL+C) in which case the child process tree is properly terminated.
 #'
 #' The `exec_background` function starts the program and immediately returns the
-#' PID of the child process. Here `std_out` and `std_out` can only be `NULL` or a
-#' file path. The state of the child is unknown to R, a child process can be killed
-#' manually with [tools::pskill]. This is useful for running a server daemon or
-#' background process.
+#' PID of the child process. Because this is non-blocking, `std_out` and `std_out`
+#' can only be `NULL` or a file path. The state of the process is not controlled by
+#' R but the child can be killed manually with [tools::pskill]. This is useful for
+#' running a server daemon or background process.
 #'
 #' @export
 #' @seealso Base [system2] and [pipe] provide other methods for running a system

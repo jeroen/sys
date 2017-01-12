@@ -28,17 +28,17 @@ background tasks and proper control over \code{stdout} / \code{stderr} streams.
 \details{
 The \code{exec_wait} function runs a system command and waits for the child process
 to exit. The \code{STDOUT} and \code{STDERR} streams are piped back to the parent process
-and can be read via a connection or callback funtion. If the child process completes
-normally (either success or error) \code{exec_wait} returns the program exit code. An
+and available as a connection or callback funtion. If the child process completes
+normally (either success or error) \code{exec_wait} returns the program exit code.
 On the other hand, when the child process is terminated by a SIGNAL, an error is
-raised in R. The program can be interrupted by the R user by sending SIGINT (press
+raised in R. The R user can interrupt the program by sending SIGINT (press
 ESC or CTRL+C) in which case the child process tree is properly terminated.
 
 The \code{exec_background} function starts the program and immediately returns the
-PID of the child process. Here \code{std_out} and \code{std_out} can only be \code{NULL} or a
-file path. The state of the child is unknown to R, a child process can be killed
-manually with \link[tools:pskill]{tools::pskill}. This is useful for running a server daemon or
-background process.
+PID of the child process. Because this is non-blocking, \code{std_out} and \code{std_out}
+can only be \code{NULL} or a file path. The state of the process is not controlled by
+R but the child can be killed manually with \link[tools:pskill]{tools::pskill}. This is useful for
+running a server daemon or background process.
 }
 \seealso{
 Base \link{system2} and \link{pipe} provide other methods for running a system
