@@ -52,6 +52,7 @@ BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
 }
 
 SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
+  int block = asLogical(wait);
   SECURITY_ATTRIBUTES sa;
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
@@ -64,7 +65,7 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
   //make STDOUT pipe
   HANDLE pipe_out = NULL;
   if (!CreatePipe(&pipe_out, &si.hStdOutput, &sa, 0))
-   Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
+    Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
   if (!SetHandleInformation(pipe_out, HANDLE_FLAG_INHERIT, 0))
     Rf_errorcall(R_NilValue, "SetHandleInformation failed");
 
@@ -100,24 +101,20 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
   CloseHandle(thread);
 
   int res = pid;
-  if(asLogical(wait)){
-    for(;;) {
-      DWORD wait_status = WaitForSingleObject(proc, 200);
-      ReadFromPipe(outfun, pipe_out);
-      ReadFromPipe(errfun, pipe_err);
-      if(wait_status != WAIT_TIMEOUT)
-        break;
-      if(pending_interrupt()){
-        EnumWindows(closeWindows, pid);
-        if(!TerminateJobObject(job, -2))
-          Rf_errorcall(R_NilValue, "TerminateJobObject failed: %d", GetLastError());
-        /*** TerminateJobObject kills all procs and threads
-        if(!TerminateThread(thread, 99))
-          Rf_errorcall(R_NilValue, "TerminateThread failed %d", GetLastError());
-        if(!TerminateProcess(proc, 99))
-          Rf_errorcall(R_NilValue, "TerminateProcess failed: %d", GetLastError());
-        */
-      }
+  while(block){
+    block = WaitForSingleObject(proc, 200);
+    ReadFromPipe(outfun, pipe_out);
+    ReadFromPipe(errfun, pipe_err);
+    if(pending_interrupt()){
+      EnumWindows(closeWindows, pid);
+      if(!TerminateJobObject(job, -2))
+        Rf_errorcall(R_NilValue, "TerminateJobObject failed: %d", GetLastError());
+      /*** TerminateJobObject kills all procs and threads
+      if(!TerminateThread(thread, 99))
+        Rf_errorcall(R_NilValue, "TerminateThread failed %d", GetLastError());
+      if(!TerminateProcess(proc, 99))
+        Rf_errorcall(R_NilValue, "TerminateProcess failed: %d", GetLastError());
+      */
     }
     DWORD exit_code;
     GetExitCodeProcess(proc, &exit_code);
