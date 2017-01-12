@@ -18,6 +18,8 @@
 #' running a server daemon or background process.
 #'
 #' @export
+#' @name exec
+#' @aliases sys
 #' @seealso Base [system2] and [pipe] provide other methods for running a system
 #' command with output.
 #' @rdname exec
