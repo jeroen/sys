@@ -31,21 +31,25 @@
 #' @param std_err filename to redirect program `STDERR` stream. For `exec_wait` this may
 #' also be a connection or callback function.
 exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
-  if(is.character(std_out)){
-    std_out <- file(normalizePath(std_out, mustWork = FALSE), open = "w+")
-    on.exit(close(std_out), add = TRUE)
-  }
-  if(is.character(std_err)){
-    std_err <- file(normalizePath(std_err, mustWork = FALSE), open = "w+")
-    on.exit(close(std_err), add = TRUE)
-  }
+  if(is.character(std_out))
+    std_out <- file(normalizePath(std_out, mustWork = FALSE))
+  if(is.character(std_err))
+    std_err <- file(normalizePath(std_err, mustWork = FALSE))
   outfun <- if(inherits(std_out, "connection")){
+    if(!isOpen(std_out)){
+      open(std_out, "w+")
+      on.exit(close(std_out, add = TRUE))
+    }
     function(x){
       cat(x, file = std_out)
       flush(std_out)
     }
   }
   errfun <- if(inherits(std_err, "connection")){
+    if(!isOpen(std_err)){
+      open(std_err, "w+")
+      on.exit(close(std_err, add = TRUE))
+    }
     function(x){
       cat(x, file = std_err)
       flush(std_err)
