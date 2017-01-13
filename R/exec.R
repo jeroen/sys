@@ -40,6 +40,8 @@
 #' file is usually the safest option.
 #'
 #' @export
+#' @return `exec_background` returns a pid. `exec_wait` returns an exit code.
+#' `exec_internal` returns a list with exit code, stdout and stderr strings.
 #' @name exec
 #' @aliases sys
 #' @seealso Base [system2] and [pipe] provide other methods for running a system

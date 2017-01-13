@@ -28,6 +28,10 @@ on \emph{Output Streams} below for details.}
 \code{TRUE}, \code{FALSE}, filename, connection object or callback function. See section
 on \emph{Output Streams} below for details.}
 }
+\value{
+\code{exec_background} returns a pid. \code{exec_wait} returns an exit code.
+\code{exec_internal} returns a list with exit code, stdout and stderr strings.
+}
 \description{
 Powerful replacements for \link{system2} with support for interruptions, background
 tasks and fine grained control over \code{STDOUT} / \code{STDERR} output streams.
