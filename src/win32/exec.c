@@ -1,6 +1,12 @@
 #include <Rinternals.h>
 #include <windows.h>
 
+/* NOTES
+ * On Windows, when wait = FALSE and std_out = TRUE or std_err = TRUE
+ * then stdout / stderr get piped to background threads to simulate
+ * the unix behavior of inheriting stdout/stderr in by child.
+ */
+
 #define IS_STRING(x) (Rf_isString(x) && Rf_length(x))
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
 #define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
