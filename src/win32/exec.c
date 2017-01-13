@@ -25,7 +25,7 @@ void R_callback(SEXP fun, const char * buf, ssize_t len){
 
 //ReadFile blocks so no need to sleep()
 //Do NOT call RPrintf here because R is not thread safe!
-static DWORD WINAPI PrintPipe(HANDLE pipe){
+static DWORD WINAPI PrintPipe(HANDLE pipe, FILE *stream){
   while(1){
     unsigned long len;
     char buffer[1025];
@@ -36,8 +36,16 @@ static DWORD WINAPI PrintPipe(HANDLE pipe){
       CloseHandle(pipe);
       ExitThread(0);
     }
-    printf("%.*s", (int) len, buffer);
+    fprintf(stream, "%.*s", (int) len, buffer);
   }
+}
+
+static DWORD WINAPI PrintOut(HANDLE pipe){
+  return PrintPipe(pipe, stdout);
+}
+
+static DWORD WINAPI PrintErr(HANDLE pipe){
+  return PrintPipe(pipe, stderr);
 }
 
 void ReadFromPipe(SEXP fun, HANDLE pipe){
@@ -154,9 +162,9 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
   } else {
     //create background threads to print stdout/stderr
     if(IS_TRUE(outfun))
-      CreateThread(NULL, 0, PrintPipe, pipe_out, 0, 0);
+      CreateThread(NULL, 0, PrintOut, pipe_out, 0, 0);
     if(IS_TRUE(errfun))
-      CreateThread(NULL, 0, PrintPipe, pipe_err, 0, 0);
+      CreateThread(NULL, 0, PrintErr, pipe_err, 0, 0);
   }
   CloseHandle(proc);
   CloseHandle(job);
