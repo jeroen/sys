@@ -20,6 +20,22 @@ void R_callback(SEXP fun, const char * buf, ssize_t len){
   UNPROTECT(2);
 }
 
+//ReadFile blocks so no need to sleep()
+static DWORD WINAPI PrintPipe(HANDLE pipe){
+  while(1){
+    unsigned long len;
+    char buffer[1025];
+    if(!ReadFile(pipe, buffer, 1024, &len, NULL)){
+      int err = GetLastError();
+      if(err != ERROR_BROKEN_PIPE)
+        printf("ReadFile(pipe) failed (%d)\n", err);
+      CloseHandle(pipe);
+      ExitThread(0);
+    }
+    printf("%.*s", (int) len, buffer);
+  }
+}
+
 void ReadFromPipe(SEXP fun, HANDLE pipe){
   unsigned long len;
   if(!PeekNamedPipe(pipe, NULL, 0, NULL, &len, NULL))
@@ -64,24 +80,24 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
   HANDLE pipe_out = NULL;
   HANDLE pipe_err = NULL;
 
-  if(block){
-    //make STDOUT pipe
+  //set STDOUT pipe
+  if(block || !Rf_length(outfun)){
     if (!CreatePipe(&pipe_out, &si.hStdOutput, &sa, 0))
       Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
     if (!SetHandleInformation(pipe_out, HANDLE_FLAG_INHERIT, 0))
       Rf_errorcall(R_NilValue, "SetHandleInformation failed");
+  } else if(Rf_isString(outfun)){
+    si.hStdOutput = fd(CHAR(STRING_ELT(outfun, 0)));
+  }
 
-
-    //make STDERR pipe
+  //set STDERR
+  if(block || !Rf_length(errfun)){
     if (!CreatePipe(&pipe_err, &si.hStdError, &sa, 0))
       Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
     if (!SetHandleInformation(pipe_err, HANDLE_FLAG_INHERIT, 0))
       Rf_errorcall(R_NilValue, "SetHandleInformation failed");
-  } else {
-    if(Rf_isString(outfun))
-      si.hStdOutput = fd(CHAR(STRING_ELT(outfun, 0)));
-    if(Rf_isString(errfun))
-      si.hStdError = fd(CHAR(STRING_ELT(errfun, 0)));
+  } else if(Rf_isString(errfun)){
+    si.hStdError = fd(CHAR(STRING_ELT(errfun, 0)));
   }
 
   //make command
@@ -131,6 +147,12 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
     CloseHandle(pipe_err);
     GetExitCodeProcess(proc, &exit_code);
     res = exit_code; //if wait=TRUE, return exit code
+  } else {
+    //create background threads to print stdout/stderr
+    if(!Rf_length(outfun))
+      CreateThread(NULL, 0, PrintPipe, pipe_out, 0, 0);
+    if(!Rf_length(errfun))
+      CreateThread(NULL, 0, PrintPipe, pipe_err, 0, 0);
   }
   CloseHandle(proc);
   CloseHandle(job);
