@@ -5,11 +5,14 @@
 \alias{exec_wait}
 \alias{sys}
 \alias{exec_background}
+\alias{exec_internal}
 \title{Running System Commands}
 \usage{
 exec_wait(cmd, args = NULL, std_out = stdout(), std_err = stderr())
 
 exec_background(cmd, args = NULL, std_out = TRUE, std_err = TRUE)
+
+exec_internal(cmd, args = NULL)
 }
 \arguments{
 \item{cmd}{the command to run. Eiter a full path or the name of a program

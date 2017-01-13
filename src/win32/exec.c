@@ -85,7 +85,7 @@ BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
   return TRUE;
 }
 
-SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
+SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   int block = asLogical(wait);
   SECURITY_ATTRIBUTES sa;
   sa.nLength = sizeof(sa);

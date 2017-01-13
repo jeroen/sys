@@ -29,7 +29,7 @@ void R_callback(SEXP fun, const char * buf, ssize_t len){
   UNPROTECT(2);
 }
 
-SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
+SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   //split process
   int block = asLogical(wait);
   int pipe_out[2];

@@ -89,7 +89,7 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
       flush(std_err)
     }
   }
-  exec_internal(cmd, args, outfun, errfun, wait = TRUE)
+  execute(cmd, args, outfun, errfun, wait = TRUE)
 }
 
 #' @export
@@ -99,13 +99,28 @@ exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE){
     stop("argument 'std_out' must be TRUE / FALSE or a filename")
   if(!is.character(std_err) && !is.logical(std_err))
     stop("argument 'std_err' must be TRUE / FALSE or a filename")
-  exec_internal(cmd, args, std_out, std_err, wait = FALSE)
+  execute(cmd, args, std_out, std_err, wait = FALSE)
 }
 
-#' @useDynLib sys C_exec_internal
-exec_internal <- function(cmd, args, std_out, std_err, wait){
+#' @export
+#' @rdname exec
+exec_internal <- function(cmd, args = NULL){
+  outcon <- textConnection("outbuf", "w")
+  on.exit(close(outcon))
+  errcon <- textConnection("errbuf", "w")
+  on.exit(close(errcon))
+  status <- exec_wait(cmd, args, std_out = outcon, std_err = errcon)
+  list(
+    status = status,
+    stdout = outbuf,
+    stderr = errbuf
+  )
+}
+
+#' @useDynLib sys C_execute
+execute <- function(cmd, args, std_out, std_err, wait){
   stopifnot(is.character(cmd))
   stopifnot(is.logical(wait))
   argv <- c(cmd, as.character(args))
-  .Call(C_exec_internal, cmd, argv, std_out, std_err, wait)
+  .Call(C_execute, cmd, argv, std_out, std_err, wait)
 }
