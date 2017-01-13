@@ -1,6 +1,9 @@
 #include <Rinternals.h>
 #include <windows.h>
 
+#define IS_STRING(x) (Rf_isString(x) && Rf_length(x))
+#define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
+#define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
 
 /* Check for interrupt without long jumping */
 void check_interrupt_fn(void *dummy) {
@@ -21,6 +24,7 @@ void R_callback(SEXP fun, const char * buf, ssize_t len){
 }
 
 //ReadFile blocks so no need to sleep()
+//Do NOT call RPrintf here because R is not thread safe!
 static DWORD WINAPI PrintPipe(HANDLE pipe){
   while(1){
     unsigned long len;
@@ -81,22 +85,22 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
   HANDLE pipe_err = NULL;
 
   //set STDOUT pipe
-  if(block || !Rf_length(outfun)){
+  if(block || IS_TRUE(outfun)){
     if (!CreatePipe(&pipe_out, &si.hStdOutput, &sa, 0))
       Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
     if (!SetHandleInformation(pipe_out, HANDLE_FLAG_INHERIT, 0))
       Rf_errorcall(R_NilValue, "SetHandleInformation failed");
-  } else if(Rf_isString(outfun)){
+  } else if(IS_STRING(outfun)){
     si.hStdOutput = fd(CHAR(STRING_ELT(outfun, 0)));
   }
 
   //set STDERR
-  if(block || !Rf_length(errfun)){
+  if(block || IS_TRUE(errfun)){
     if (!CreatePipe(&pipe_err, &si.hStdError, &sa, 0))
       Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
     if (!SetHandleInformation(pipe_err, HANDLE_FLAG_INHERIT, 0))
       Rf_errorcall(R_NilValue, "SetHandleInformation failed");
-  } else if(Rf_isString(errfun)){
+  } else if(IS_STRING(errfun)){
     si.hStdError = fd(CHAR(STRING_ELT(errfun, 0)));
   }
 
@@ -149,9 +153,9 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
     res = exit_code; //if wait=TRUE, return exit code
   } else {
     //create background threads to print stdout/stderr
-    if(!Rf_length(outfun))
+    if(IS_TRUE(outfun))
       CreateThread(NULL, 0, PrintPipe, pipe_out, 0, 0);
-    if(!Rf_length(errfun))
+    if(IS_TRUE(errfun))
       CreateThread(NULL, 0, PrintPipe, pipe_err, 0, 0);
   }
   CloseHandle(proc);

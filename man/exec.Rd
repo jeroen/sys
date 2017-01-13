@@ -9,7 +9,7 @@
 \usage{
 exec_wait(cmd, args = NULL, std_out = stdout(), std_err = stderr())
 
-exec_background(cmd, args = NULL, std_out = NULL, std_err = NULL)
+exec_background(cmd, args = NULL, std_out = TRUE, std_err = TRUE)
 }
 \arguments{
 \item{cmd}{the command to run. Eiter a full path or the name of a program
@@ -46,4 +46,3 @@ running a server daemon or background process.
 Base \link{system2} and \link{pipe} provide other methods for running a system
 command with output.
 }
-

@@ -31,10 +31,20 @@
 #' @param std_err filename to redirect program `STDERR` stream. For `exec_wait` this may
 #' also be a connection or callback function.
 exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
-  if(is.character(std_out))
-    std_out <- file(normalizePath(std_out, mustWork = FALSE))
-  if(is.character(std_err))
+  # Convert TRUE or filepath into connection objects
+  std_out <- if(isTRUE(std_out) || identical(std_out, "")){
+    stdout()
+  } else if(is.character(std_out)){
+    file(normalizePath(std_out, mustWork = FALSE))
+  } else std_out
+
+  std_err <- if(isTRUE(std_err) || identical(std_err, "")){
+    stderr()
+  } else if(is.character(std_err)){
     std_err <- file(normalizePath(std_err, mustWork = FALSE))
+  } else std_err
+
+  # Define the callbacks
   outfun <- if(inherits(std_out, "connection")){
     if(!isOpen(std_out)){
       open(std_out, "w+")
@@ -60,11 +70,9 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
 
 #' @export
 #' @rdname exec
-exec_background <- function(cmd, args = NULL, std_out = NULL, std_err = NULL){
-  if(length(std_out))
-    stopifnot(is.character(std_out))
-  if(length(std_err))
-    stopifnot(is.character(std_err))
+exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE){
+  stopifnot(is.character(std_out) || is.logical(std_out))
+  stopifnot(is.character(std_err) || is.logical(std_err))
   exec_internal(cmd, args, std_out, std_err, wait = FALSE)
 }
 
