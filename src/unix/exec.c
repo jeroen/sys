@@ -7,6 +7,10 @@
 #include <string.h>
 #include <fcntl.h>
 
+#define IS_STRING(x) (Rf_isString(x) && Rf_length(x))
+#define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
+#define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
+
 /* Check for interrupt without long jumping */
 void check_interrupt_fn(void *dummy) {
   R_CheckUserInterrupt();
@@ -60,17 +64,21 @@ SEXP C_exec_internal(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wai
       close(pipe_err[0]);
       close(pipe_err[1]);
     } else {
-      if(Rf_isString(outfun)){
+      if(IS_STRING(outfun)){
         const char * file = CHAR(STRING_ELT(outfun, 0));
         int fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
         dup2(fd, STDOUT_FILENO);
         close(fd);
+      } else if(!IS_TRUE(outfun)){
+        close(STDOUT_FILENO);
       }
-      if(Rf_isString(errfun)){
+      if(IS_STRING(errfun)){
         const char * file = CHAR(STRING_ELT(errfun, 0));
         int fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
         dup2(fd, STDERR_FILENO);
         close(fd);
+      } else if(!IS_TRUE(errfun)){
+        close(STDERR_FILENO);
       }
     }
 
