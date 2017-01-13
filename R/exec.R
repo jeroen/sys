@@ -95,8 +95,10 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
 #' @export
 #' @rdname exec
 exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE){
-  stopifnot(is.character(std_out) || is.logical(std_out))
-  stopifnot(is.character(std_err) || is.logical(std_err))
+  if(!is.character(std_out) && !is.logical(std_out))
+    stop("argument 'std_out' must be TRUE / FALSE or a filename")
+  if(!is.character(std_err) && !is.logical(std_err))
+    stop("argument 'std_err' must be TRUE / FALSE or a filename")
   exec_internal(cmd, args, std_out, std_err, wait = FALSE)
 }
 
