@@ -4,8 +4,8 @@ Title: System Utilities
 Version: 0.1
 Author: Jeroen Ooms
 Maintainer: Jeroen Ooms <jeroen.ooms@stat.ucla.edu>
-Description: Flexible replacements for base system2 / pipe with support for 
-    interruptions, background tasks, and fine control over output streams.
+Description: Powerful replacements for base system2 with support for interruptions, 
+    background tasks, and fine grained control over STDOUT / STDERR output streams.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

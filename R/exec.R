@@ -1,21 +1,43 @@
-#' Run a system command
+#' Running System Commands
 #'
-#' Flexible replacements for [system2] / [pipe] with support for interruptions,
-#' background tasks and proper control over `stdout` / `stderr` streams.
+#' Powerful replacements for [system2] with support for interruptions, background
+#' tasks and fine grained control over `STDOUT` / `STDERR` output streams.
 #'
 #' The `exec_wait` function runs a system command and waits for the child process
-#' to exit. The `STDOUT` and `STDERR` streams are piped back to the parent process
-#' and available as a connection or callback funtion. If the child process completes
-#' normally (either success or error) `exec_wait` returns the program exit code.
-#' On the other hand, when the child process is terminated by a SIGNAL, an error is
-#' raised in R. The R user can interrupt the program by sending SIGINT (press
+#' to exit. When the child process completes normally (either success or error) it
+#' returns with the program exit code. Otherwise (if the child process gets aborted)
+#' R raises an error. The R user can interrupt the program by sending SIGINT (press
 #' ESC or CTRL+C) in which case the child process tree is properly terminated.
+#' Output streams `STDOUT` and `STDERR` are piped back to the parent process and can
+#' be sent to a connection or callback function. See the section on *Output Streams*
+#' below for details.
 #'
 #' The `exec_background` function starts the program and immediately returns the
 #' PID of the child process. Because this is non-blocking, `std_out` and `std_out`
-#' can only be `NULL` or a file path. The state of the process is not controlled by
-#' R but the child can be killed manually with [tools::pskill]. This is useful for
-#' running a server daemon or background process.
+#' can only be `TRUE`/`FALSE` or a file path. The state of the process is not
+#' controlled by R but the child can be killed manually with [tools::pskill]. This
+#' is useful for running a server daemon or background process.
+#'
+#' @section Output Streams:
+#'
+#' The `std_out` and `std_err` parameters are used to control how output streams
+#' of the child are processed. Possible values for both foreground and background
+#' processes are:
+#'
+#'  - `TRUE`: print child output in R console
+#'  - `FALSE`: suppress output stream
+#'  - *string*: name or path of file to redirect output
+#'
+#' In addition the `exec_wait` function also supports the following `std_out` and `std_err`
+#' types:
+#'
+#'  - *connection* a writeable R [connection] object such as [stdout] or [stderr]
+#'  - *function*: callback function with one argument accepting a string
+#'
+#' When using `exec_background` with `std_out = TRUE` or `std_err = TRUE` on Windows,
+#' separate threads are used to print output. This works in RStudio and RTerm but
+#' not in RGui because the latter has a custom I/O mechanism. Directing output to a
+#' file is usually the safest option.
 #'
 #' @export
 #' @name exec
@@ -26,10 +48,12 @@
 #' @param cmd the command to run. Eiter a full path or the name of a program
 #' which exists in the `PATH`.
 #' @param args character vector of arguments to pass
-#' @param std_out filename to redirect program `STDOUT` stream. For `exec_wait` this may
-#' also be a connection or callback function.
-#' @param std_err filename to redirect program `STDERR` stream. For `exec_wait` this may
-#' also be a connection or callback function.
+#' @param std_out if and where to direct child process `STDOUT`. Must be one of
+#' `TRUE`, `FALSE`, filename, connection object or callback function. See section
+#' on *Output Streams* below for details.
+#' @param std_err if and where to direct child process `STDERR`. Must be one of
+#' `TRUE`, `FALSE`, filename, connection object or callback function. See section
+#' on *Output Streams* below for details.
 exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
   # Convert TRUE or filepath into connection objects
   std_out <- if(isTRUE(std_out) || identical(std_out, "")){
