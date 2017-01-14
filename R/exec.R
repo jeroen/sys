@@ -1,7 +1,7 @@
 #' Running System Commands
 #'
 #' Powerful replacements for [system2] with support for interruptions, background
-#' tasks and fine grained control over `STDOUT` / `STDERR` output streams.
+#' tasks and fine grained control over `STDOUT` / `STDERR` binary or text streams.
 #'
 #' The `exec_wait` function runs a system command and waits for the child process
 #' to exit. When the child process completes normally (either success or error) it
@@ -18,6 +18,10 @@
 #' controlled by R but the child can be killed manually with [tools::pskill]. This
 #' is useful for running a server daemon or background process.
 #'
+#' The `exec_internal` function is a small wrapper around `exec_wait` which captures
+#' output streams and returns a list with status code, stdout and stderr data. Use
+#' [rawToChar] to convert the raw output to text.
+#'
 #' @section Output Streams:
 #'
 #' The `std_out` and `std_err` parameters are used to control how output streams
@@ -32,7 +36,8 @@
 #' types:
 #'
 #'  - *connection* a writeable R [connection] object such as [stdout] or [stderr]
-#'  - *function*: callback function with one argument accepting a raw vector
+#'  - *function*: callback function with one argument accepting a raw vector (use
+#'  [rawToChar] to convert to text).
 #'
 #' When using `exec_background` with `std_out = TRUE` or `std_err = TRUE` on Windows,
 #' separate threads are used to print output. This works in RStudio and RTerm but

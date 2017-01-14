@@ -34,7 +34,7 @@ on \emph{Output Streams} below for details.}
 }
 \description{
 Powerful replacements for \link{system2} with support for interruptions, background
-tasks and fine grained control over \code{STDOUT} / \code{STDERR} output streams.
+tasks and fine grained control over \code{STDOUT} / \code{STDERR} binary or text streams.
 }
 \details{
 The \code{exec_wait} function runs a system command and waits for the child process
@@ -51,6 +51,10 @@ PID of the child process. Because this is non-blocking, \code{std_out} and \code
 can only be \code{TRUE}/\code{FALSE} or a file path. The state of the process is not
 controlled by R but the child can be killed manually with \link[tools:pskill]{tools::pskill}. This
 is useful for running a server daemon or background process.
+
+The \code{exec_internal} function is a small wrapper around \code{exec_wait} which captures
+output streams and returns a list with status code, stdout and stderr data. Use
+\link{rawToChar} to convert the raw output to text.
 }
 \section{Output Streams}{
 
@@ -68,7 +72,8 @@ In addition the \code{exec_wait} function also supports the following \code{std_
 types:
 \itemize{
 \item \emph{connection} a writeable R \link{connection} object such as \link{stdout} or \link{stderr}
-\item \emph{function}: callback function with one argument accepting a raw vector
+\item \emph{function}: callback function with one argument accepting a raw vector (use
+\link{rawToChar} to convert to text).
 }
 
 When using \code{exec_background} with \code{std_out = TRUE} or \code{std_err = TRUE} on Windows,
