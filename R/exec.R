@@ -32,7 +32,7 @@
 #' types:
 #'
 #'  - *connection* a writeable R [connection] object such as [stdout] or [stderr]
-#'  - *function*: callback function with one argument accepting a string
+#'  - *function*: callback function with one argument accepting a raw vector
 #'
 #' When using `exec_background` with `std_out = TRUE` or `std_err = TRUE` on Windows,
 #' separate threads are used to print output. This works in RStudio and RTerm but
@@ -73,22 +73,36 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
   # Define the callbacks
   outfun <- if(inherits(std_out, "connection")){
     if(!isOpen(std_out)){
-      open(std_out, "w+")
+      open(std_out, "wb+")
       on.exit(close(std_out), add = TRUE)
     }
-    function(x){
-      cat(x, file = std_out)
-      flush(std_out)
+    if(identical(summary(std_out)$text, "text")){
+      function(x){
+        cat(rawToChar(x), file = std_out)
+        flush(std_out)
+      }
+    } else {
+      function(x){
+        writeBin(x, con = std_out)
+        flush(std_out)
+      }
     }
   }
   errfun <- if(inherits(std_err, "connection")){
     if(!isOpen(std_err)){
-      open(std_err, "w+")
+      open(std_err, "wb+")
       on.exit(close(std_err), add = TRUE)
     }
-    function(x){
-      cat(x, file = std_err)
-      flush(std_err)
+    if(identical(summary(std_err)$text, "text")){
+      function(x){
+        cat(rawToChar(x), file = std_err)
+        flush(std_err)
+      }
+    } else {
+      function(x){
+        writeBin(x, con = std_err)
+        flush(std_err)
+      }
     }
   }
   execute(cmd, args, outfun, errfun, wait = TRUE)
@@ -107,15 +121,15 @@ exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE){
 #' @export
 #' @rdname exec
 exec_internal <- function(cmd, args = NULL){
-  outcon <- textConnection("outbuf", "w")
+  outcon <- rawConnection(raw(0), "r+")
   on.exit(close(outcon))
-  errcon <- textConnection("errbuf", "w")
+  errcon <- rawConnection(raw(0), "r+")
   on.exit(close(errcon))
   status <- exec_wait(cmd, args, std_out = outcon, std_err = errcon)
   list(
     status = status,
-    stdout = outbuf,
-    stderr = errbuf
+    stdout = rawConnectionValue(outcon),
+    stderr = rawConnectionValue(errcon)
   )
 }
 

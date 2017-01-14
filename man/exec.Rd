@@ -68,7 +68,7 @@ In addition the \code{exec_wait} function also supports the following \code{std_
 types:
 \itemize{
 \item \emph{connection} a writeable R \link{connection} object such as \link{stdout} or \link{stderr}
-\item \emph{function}: callback function with one argument accepting a string
+\item \emph{function}: callback function with one argument accepting a raw vector
 }
 
 When using \code{exec_background} with \code{std_out = TRUE} or \code{std_err = TRUE} on Windows,

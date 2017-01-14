@@ -23,7 +23,8 @@ int pending_interrupt() {
 void R_callback(SEXP fun, const char * buf, ssize_t len){
   if(!isFunction(fun)) return;
   int ok;
-  SEXP str = PROTECT(ScalarString(mkCharLen(buf, len)));
+  SEXP str = PROTECT(allocVector(RAWSXP, len));
+  memcpy(RAW(str), buf, len);
   SEXP call = PROTECT(LCONS(fun, LCONS(str, R_NilValue)));
   R_tryEval(call, R_GlobalEnv, &ok);
   UNPROTECT(2);
