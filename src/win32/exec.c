@@ -128,7 +128,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   }
   PROCESS_INFORMATION pi = {0};
   if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED, NULL, NULL, &si, &pi))
-    Rf_errorcall(R_NilValue, "CreateProcess failed for %s", cmd);
+    Rf_errorcall(R_NilValue, "Failed to execute '%s'", cmd);
 
   //CloseHandle(pi.hThread);
   DWORD pid = GetProcessId(pi.hProcess);
