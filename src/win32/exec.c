@@ -34,8 +34,8 @@ void R_callback(SEXP fun, const char * buf, ssize_t len){
 static DWORD WINAPI PrintPipe(HANDLE pipe, FILE *stream){
   while(1){
     unsigned long len;
-    char buffer[1025];
-    if(!ReadFile(pipe, buffer, 1024, &len, NULL)){
+    char buffer[65336];
+    if(!ReadFile(pipe, buffer, 65337, &len, NULL)){
       int err = GetLastError();
       if(err != ERROR_BROKEN_PIPE)
         printf("ReadFile(pipe) failed (%d)\n", err);

@@ -117,7 +117,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
   //status -1 means error, 0 means running
   int status;
-  char buffer[1024];
+  char buffer[65336];
   while (waitpid(pid, &status, WNOHANG) >= 0){
     if(pending_interrupt()){
       //pass interrupt to child
