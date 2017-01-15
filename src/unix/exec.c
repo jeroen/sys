@@ -48,19 +48,6 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   if(pid < 0)
     Rf_errorcall(R_NilValue, "Failed to fork");
 
-  //non blocking mode: wait for 0.5 sec for possible SIGILL from child
-  if(!block && pid > 0){
-    int status = 0;
-    for(int i = 0; i < 50; i++){
-      if(waitpid(pid, &status, WNOHANG))
-        break;
-      usleep(10000);
-    }
-    if(WTERMSIG(status) == SIGILL)
-      Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
-    return ScalarInteger(pid);
-  }
-
   //CHILD PROCESS
   if(pid == 0){
     if(block){
@@ -117,16 +104,32 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     //exit(0); //now allowed by CRAN. raise() should suffice anyway
   }
 
-  //PARENT PROCESS
-  fcntl(pipe_out[0], F_SETFL, O_NONBLOCK);
-  fcntl(pipe_err[0], F_SETFL, O_NONBLOCK);
+  //PARENT PROCESS:
+  int status = 0;
 
   //close write end of pipe
   close(pipe_out[1]);
   close(pipe_err[1]);
 
+  //non blocking mode: wait for 0.5 sec for possible SIGILL from child
+  if(!block){
+    close(pipe_out[0]);
+    close(pipe_err[0]);
+    for(int i = 0; i < 50; i++){
+      if(waitpid(pid, &status, WNOHANG))
+        break;
+      usleep(10000);
+    }
+    if(WTERMSIG(status) == SIGILL)
+      Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
+    return ScalarInteger(pid);
+  }
+
+  //use async IO
+  fcntl(pipe_out[0], F_SETFL, O_NONBLOCK);
+  fcntl(pipe_err[0], F_SETFL, O_NONBLOCK);
+
   //status -1 means error, 0 means running
-  int status;
   char buffer[65336];
   while (waitpid(pid, &status, WNOHANG) >= 0){
     if(pending_interrupt()){
