@@ -1,4 +1,15 @@
-context("error messages")
+context("ping examples")
+
+test_that("run ping is available", {
+  sysname <- tolower(Sys.info()[["sysname"]])
+  args <- switch(sysname,
+     windows = "-n2",
+     darwin = "-t2",
+     linux = "-t2",
+     sunos = c("-s", "-t2")
+  )
+  expect_equal(exec_wait("ping", c(args, "localhost"), std_out = FALSE), 0)
+})
 
 test_that("error is raised for invalid executable",{
   expect_error(exec_wait("doesnotexist"), "Failed to execute")
