@@ -100,7 +100,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
     // picked up by WTERMSIG() below in parent proc
-    raise(SIGILL);
+    raise(SIGQUIT);
     //exit(0); //now allowed by CRAN. raise() should suffice anyway
   }
 
@@ -111,7 +111,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   close(pipe_out[1]);
   close(pipe_err[1]);
 
-  //non blocking mode: wait for 0.5 sec for possible SIGILL from child
+  //non blocking mode: wait for 0.5 sec for possible SIGQUIT from child
   if(!block){
     close(pipe_out[0]);
     close(pipe_err[0]);
@@ -120,7 +120,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
         break;
       usleep(10000);
     }
-    if(WTERMSIG(status) == SIGILL)
+    if(WTERMSIG(status) == SIGQUIT)
       Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
     return ScalarInteger(pid);
   }
@@ -150,7 +150,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     return ScalarInteger(WEXITSTATUS(status));
   } else {
     int signal = WTERMSIG(status);
-    if(signal == SIGILL)
+    if(signal == SIGQUIT)
       Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
     if(signal != 0)
       Rf_errorcall(R_NilValue, "Program '%s' terminated by SIGNAL (%s)", CHAR(STRING_ELT(command, 0)), strsignal(signal));
