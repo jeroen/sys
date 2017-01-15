@@ -103,6 +103,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     //execvp never returns if successful
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
+    //apparently it failed
+    if(!block)
+      fprintf(stderr, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
+
     // picked up by WTERMSIG() below in parent proc
     raise(SIGILL);
     //exit(0); //now allowed by CRAN. raise() should suffice anyway
