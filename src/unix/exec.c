@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#include <poll.h>
 
 #define IS_STRING(x) (Rf_isString(x) && Rf_length(x))
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
@@ -47,8 +48,16 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   if(pid < 0)
     Rf_errorcall(R_NilValue, "Failed to fork");
 
-  //non blocking mode: return pid
+  //non blocking mode: wait for 0.5 sec for possible SIGILL from child
   if(!block && pid > 0){
+    int status = 0;
+    for(int i = 0; i < 50; i++){
+      if(waitpid(pid, &status, WNOHANG))
+        break;
+      usleep(10000);
+    }
+    if(WTERMSIG(status) == SIGILL)
+      Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
     return ScalarInteger(pid);
   }
 
@@ -102,10 +111,6 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
     //execvp never returns if successful
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
-
-    //apparently it failed
-    if(!block)
-      fprintf(stderr, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
 
     // picked up by WTERMSIG() below in parent proc
     raise(SIGILL);
