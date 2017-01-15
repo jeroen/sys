@@ -1,3 +1,5 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^src/Makevars$
+^\.travis\.yml$
+^appveyor\.yml$
