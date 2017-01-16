@@ -37,8 +37,8 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
   //create pipes only in blocking mode
   if(block){
-    pipe(pipe_out);
-    pipe(pipe_err);
+    if(pipe(pipe_out) || pipe(pipe_err))
+      Rf_errorcall(R_NilValue, "Failed to create pipe");
   }
 
   //fork the main process
