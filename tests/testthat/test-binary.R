@@ -5,7 +5,7 @@ test_that("copy a binary image", {
   olddir <- getwd()
   on.exit(setwd(olddir))
   setwd(tempdir())
-  testfile <- file.path(Sys.getenv("R_DOC_DIR"), "html/logo.jpg")
+  testfile <- system.file("data/Rdata.rdb", package = "nycflights13")
   file.copy(testfile, "input.bin")
   if(is_windows){
     res1 <- exec_wait("cmd", c("/C", "type", "input.bin"), std_out = "out1.bin")
