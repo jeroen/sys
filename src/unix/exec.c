@@ -100,21 +100,21 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
     // picked up by WTERMSIG() below in parent proc
-    raise(SIGSYS);
+    raise(SIGHUP);
     //exit(0); //now allowed by CRAN. raise() should suffice anyway
   }
 
   //PARENT PROCESS:
   int status = 0;
 
-  //non blocking mode: wait for 0.5 sec for possible SIGSYS from child
+  //non blocking mode: wait for 0.5 sec for possible SIGHUP from child
   if(!block){
     for(int i = 0; i < 50; i++){
       if(waitpid(pid, &status, WNOHANG))
         break;
       usleep(10000);
     }
-    if(WTERMSIG(status) == SIGSYS)
+    if(WTERMSIG(status) == SIGHUP)
       Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
     return ScalarInteger(pid);
   }
@@ -148,7 +148,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     return ScalarInteger(WEXITSTATUS(status));
   } else {
     int signal = WTERMSIG(status);
-    if(signal == SIGSYS)
+    if(signal == SIGHUP)
       Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
     if(signal != 0)
       Rf_errorcall(R_NilValue, "Program '%s' terminated by SIGNAL (%s)", CHAR(STRING_ELT(command, 0)), strsignal(signal));
