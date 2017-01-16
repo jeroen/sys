@@ -56,10 +56,12 @@ static DWORD WINAPI PrintErr(HANDLE pipe){
 }
 
 void ReadFromPipe(SEXP fun, HANDLE pipe){
-  unsigned long len;
-  if(!PeekNamedPipe(pipe, NULL, 0, NULL, &len, NULL))
-    Rf_errorcall(R_NilValue, "PeekNamedPipe failed");
-  if(len > 0){
+  unsigned long len = 1;
+  while(1){
+    if(!PeekNamedPipe(pipe, NULL, 0, NULL, &len, NULL))
+      Rf_errorcall(R_NilValue, "PeekNamedPipe failed");
+    if(!len)
+      break;
     char buffer[len];
     unsigned long outlen;
     if(ReadFile(pipe, buffer, len, &outlen, NULL))
