@@ -3,10 +3,8 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
-#include <poll.h>
 
 #define IS_STRING(x) (Rf_isString(x) && Rf_length(x))
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
