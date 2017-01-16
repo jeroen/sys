@@ -102,6 +102,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
     //not allowed by CRAN. raise() should suffice
     //exit(EXIT_FAILURE);
+
+    //should never happen
+    return NULL;
   }
 
   //PARENT PROCESS:
