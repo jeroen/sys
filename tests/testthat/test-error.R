@@ -22,12 +22,12 @@ test_that("error is raised for invalid executable",{
 
 
 test_that("no error is raised for program error", {
-  expect_is(exec_wait("ping", "asfdsafdsfasdfasdf", std_err = FALSE, std_out = FALSE), "integer")
-  expect_is(exec_background("ping", "asfdsafdsfasdfasdf", std_err = FALSE, std_out = FALSE), "integer")
+  expect_is(exec_wait("ping", "999.999.999.999.999", std_err = FALSE, std_out = FALSE), "integer")
+  expect_is(exec_background("ping", "999.999.999.999.999", std_err = FALSE, std_out = FALSE), "integer")
 })
 
 test_that("exec_internal automatically raises error", {
-  expect_error(exec_internal('ping', 'asfdsafdsfasdfasdf'))
-  out <- exec_internal('ping', 'sdfsdfsdf', error = FALSE)
+  expect_error(exec_internal('ping', "999.999.999.999.999"))
+  out <- exec_internal('ping', "999.999.999.999.999", error = FALSE)
   expect_gt(out$status, 0)
 })

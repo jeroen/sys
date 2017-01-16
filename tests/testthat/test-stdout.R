@@ -1,14 +1,22 @@
 context("stdout and stderr")
 
 test_that("test output for std_out equals TRUE/FALSE", {
-  string <- "hello world!"
-  output1 <- capture.output(res <- exec_wait('echo', string))
-  output2 <- capture.output(res <- exec_wait('echo', string, std_out = FALSE))
-  expect_equal(output1, string)
+  is_windows <- identical("windows", tolower(Sys.info()[["sysname"]]))
+  string <- "hello world"
+  if(is_windows){
+    output1 <- capture.output(res <- exec_wait('cmd', c('/C', 'echo', string)))
+    output2 <- capture.output(res <- exec_wait('cmd', c('/C', 'echo', string), std_out = FALSE))
+    output3 <- capture.output(res <- exec_wait('cmd', c('/C', 'echo', string, ">&2"), std_out = FALSE), type = 'message')
+    output4 <- capture.output(res <- exec_wait('cmd', c('/C', 'echo', string, ">&2"), std_out = FALSE, std_err = FALSE), type = 'message')
+  } else {
+    output1 <- capture.output(res <- exec_wait('echo', string))
+    output2 <- capture.output(res <- exec_wait('echo', string, std_out = FALSE))
+    command <- sprintf("echo %s >&2", string)
+    output3 <- capture.output(res <- exec_wait("sh", c("-c", command)), type = 'message')
+    output4 <- capture.output(res <- exec_wait("sh", c("-c", command), std_err = FALSE), type = 'message')
+  }
+  expect_equal(sub("\\W+$", "", output1), string)
   expect_equal(output2, character())
-
-  output3 <- capture.output(res <- exec_wait('ping', 'asfdsafdsfasdfasdf'), type = 'message')
-  output4 <- capture.output(res <- exec_wait('ping', 'asfdsafdsfasdfasdf', std_err = FALSE), type = 'message')
-  expect_length(output3, 1)
-  expect_length(output4, 0)
+  expect_equal(sub("\\W+$", "", output3), string)
+  expect_equal(output4, character())
 })
