@@ -5,7 +5,7 @@ test_that("run ping is available", {
   args <- switch(sysname,
      windows = c("-n2", "localhost"),
      darwin = c("-t2", "localhost"),
-     linux = c("-t2", "localhost"),
+     linux = c("-c2", "localhost"),
      sunos = c("-s", "localhost", "64", "2")
   )
   expect_equal(exec_wait("ping", args, std_out = FALSE), 0)
