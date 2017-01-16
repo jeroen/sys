@@ -3,7 +3,7 @@ context("ping examples")
 test_that("run ping is available", {
   sysname <- tolower(Sys.info()[["sysname"]])
   args <- switch(sysname,
-     windows = c("-n2", "localhost"),
+     windows = c("-n 2", "localhost"),
      darwin = c("-t2", "localhost"),
      linux = c("-c2", "localhost"),
      sunos = c("-s", "localhost", "64", "2")
