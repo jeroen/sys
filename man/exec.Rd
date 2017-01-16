@@ -12,7 +12,7 @@ exec_wait(cmd, args = NULL, std_out = stdout(), std_err = stderr())
 
 exec_background(cmd, args = NULL, std_out = TRUE, std_err = TRUE)
 
-exec_internal(cmd, args = NULL)
+exec_internal(cmd, args = NULL, error = TRUE)
 }
 \arguments{
 \item{cmd}{the command to run. Eiter a full path or the name of a program
@@ -27,6 +27,8 @@ on \emph{Output Streams} below for details.}
 \item{std_err}{if and where to direct child process \code{STDERR}. Must be one of
 \code{TRUE}, \code{FALSE}, filename, connection object or callback function. See section
 on \emph{Output Streams} below for details.}
+
+\item{error}{automatically raise an error if the exit status is non-zero.}
 }
 \value{
 \code{exec_background} returns a pid. \code{exec_wait} returns an exit code.
@@ -52,9 +54,10 @@ can only be \code{TRUE}/\code{FALSE} or a file path. The state of the process is
 controlled by R but the child can be killed manually with \link[tools:pskill]{tools::pskill}. This
 is useful for running a server daemon or background process.
 
-The \code{exec_internal} function is a small wrapper around \code{exec_wait} which captures
-output streams and returns a list with status code, stdout and stderr data. Use
-\link{rawToChar} to convert the raw output to text.
+The \code{exec_internal} function is a convenience wrapper around \code{exec_wait} which
+automatically captures output streams and raises an error if execution fails.
+Upon success it returns a list with status code, and raw vectors containing
+stdout and stderr data (use \link{rawToChar} for converting to text).
 }
 \section{Output Streams}{
 

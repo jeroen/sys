@@ -18,9 +18,10 @@
 #' controlled by R but the child can be killed manually with [tools::pskill]. This
 #' is useful for running a server daemon or background process.
 #'
-#' The `exec_internal` function is a small wrapper around `exec_wait` which captures
-#' output streams and returns a list with status code, stdout and stderr data. Use
-#' [rawToChar] to convert the raw output to text.
+#' The `exec_internal` function is a convenience wrapper around `exec_wait` which
+#' automatically captures output streams and raises an error if execution fails.
+#' Upon success it returns a list with status code, and raw vectors containing
+#' stdout and stderr data (use [rawToChar] for converting to text).
 #'
 #' @section Output Streams:
 #'
@@ -125,12 +126,15 @@ exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE){
 
 #' @export
 #' @rdname exec
-exec_internal <- function(cmd, args = NULL){
+#' @param error automatically raise an error if the exit status is non-zero.
+exec_internal <- function(cmd, args = NULL, error = TRUE){
   outcon <- rawConnection(raw(0), "r+")
   on.exit(close(outcon), add = TRUE)
   errcon <- rawConnection(raw(0), "r+")
   on.exit(close(errcon), add = TRUE)
   status <- exec_wait(cmd, args, std_out = outcon, std_err = errcon)
+  if(isTRUE(error) && !identical(status, 0L))
+    stop(sprintf("Executing '%s' failed with status %d", cmd, status))
   list(
     status = status,
     stdout = rawConnectionValue(outcon),
