@@ -99,9 +99,11 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     //execvp never returns if successful
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
-    // picked up by WTERMSIG() below in parent proc
+    // signal is picked up by WTERMSIG() in parent proc
     raise(SIGHUP);
-    //exit(0); //now allowed by CRAN. raise() should suffice anyway
+
+    //not allowed by CRAN. raise() should suffice
+    //exit(EXIT_FAILURE);
   }
 
   //PARENT PROCESS:

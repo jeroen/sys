@@ -21,7 +21,7 @@ test_that("error is raised for invalid executable",{
 })
 
 
-test_that("no error is raised for system error", {
+test_that("no error is raised for program error", {
   expect_is(exec_wait("ping", "asfdsafdsfasdfasdf", std_err = FALSE, std_out = FALSE), "integer")
   expect_is(exec_background("ping", "asfdsafdsfasdfasdf", std_err = FALSE, std_out = FALSE), "integer")
 })
