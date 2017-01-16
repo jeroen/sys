@@ -107,14 +107,8 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   //PARENT PROCESS:
   int status = 0;
 
-  //close write end of pipe
-  close(pipe_out[1]);
-  close(pipe_err[1]);
-
   //non blocking mode: wait for 0.5 sec for possible SIGSYS from child
   if(!block){
-    close(pipe_out[0]);
-    close(pipe_err[0]);
     for(int i = 0; i < 50; i++){
       if(waitpid(pid, &status, WNOHANG))
         break;
@@ -124,6 +118,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
       Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
     return ScalarInteger(pid);
   }
+
+  //close write end of pipe
+  close(pipe_out[1]);
+  close(pipe_err[1]);
 
   //use async IO
   fcntl(pipe_out[0], F_SETFL, O_NONBLOCK);
