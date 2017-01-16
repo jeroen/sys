@@ -1,6 +1,6 @@
 Package: sys
 Type: Package
-Title: System Utilities
+Title: Portable System Utilities
 Version: 0.1
 Author: Jeroen Ooms
 Maintainer: Jeroen Ooms <jeroen.ooms@stat.ucla.edu>
