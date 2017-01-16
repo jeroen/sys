@@ -78,7 +78,7 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
   # Define the callbacks
   outfun <- if(inherits(std_out, "connection")){
     if(!isOpen(std_out)){
-      open(std_out, "wb+")
+      open(std_out, "wb")
       on.exit(close(std_out), add = TRUE)
     }
     if(identical(summary(std_out)$text, "text")){
@@ -95,7 +95,7 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
   }
   errfun <- if(inherits(std_err, "connection")){
     if(!isOpen(std_err)){
-      open(std_err, "wb+")
+      open(std_err, "wb")
       on.exit(close(std_err), add = TRUE)
     }
     if(identical(summary(std_err)$text, "text")){
@@ -127,9 +127,9 @@ exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE){
 #' @rdname exec
 exec_internal <- function(cmd, args = NULL){
   outcon <- rawConnection(raw(0), "r+")
-  on.exit(close(outcon))
+  on.exit(close(outcon), add = TRUE)
   errcon <- rawConnection(raw(0), "r+")
-  on.exit(close(errcon))
+  on.exit(close(errcon), add = TRUE)
   status <- exec_wait(cmd, args, std_out = outcon, std_err = errcon)
   list(
     status = status,
