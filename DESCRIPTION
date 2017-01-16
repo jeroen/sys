@@ -8,6 +8,8 @@ Description: Powerful replacements for base system2 with consistent behavior acr
     platforms. Supports interruption, background tasks, and full control over
     STDOUT / STDERR binary or text streams.
 License: MIT + file LICENSE
+URL: https://github.com/jeroenooms/sys#readme
+BugReports: https://github.com/jeroenooms/sys/issues
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
