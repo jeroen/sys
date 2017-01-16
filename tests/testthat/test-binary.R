@@ -14,9 +14,9 @@ test_that("copy a binary image", {
     pid2 <- exec_background("cmd", c("/C", "type", "input.bin", ">&2"), std_err = "out4.bin")
   } else {
     res1 <- exec_wait("cat", "input.bin", std_out = "out1.bin")
-    res2 <- exec_wait("cat", c("input.bin", ">&2"), std_err = "out2.bin")
+    res2 <- exec_wait("sh", c("-c", "cat input.bin >&2"), std_err = "out2.bin")
     pid1 <- exec_background("cat", "input.bin", std_out = "out3.bin")
-    pid2 <- exec_background("cat", c("input.bin", ">&2"), std_err = "out4.bin")
+    pid2 <- exec_background("sh", c("-c", "cat input.bin >&2"), std_err = "out4.bin")
   }
   on.exit(tools::pskill(pid1), add = TRUE)
   on.exit(tools::pskill(pid2), add = TRUE)
