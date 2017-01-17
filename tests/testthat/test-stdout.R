@@ -1,7 +1,7 @@
 context("stdout and stderr")
 
 test_that("test output for std_out equals TRUE/FALSE", {
-  skip_if_not(packageVersion("base") >= "3.3", "skipping R 3.3 tests")
+  skip_if_not(packageVersion("base") >= "3.2.2", "skipping capture.output tests")
   is_windows <- identical("windows", tolower(Sys.info()[["sysname"]]))
   string <- "hello world"
   if(is_windows){
