@@ -14,4 +14,4 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 5.0.1.9000
-Suggests: testthat, nycflights13
+Suggests: testthat

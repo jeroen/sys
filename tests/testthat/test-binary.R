@@ -5,8 +5,8 @@ test_that("copy a binary image", {
   olddir <- getwd()
   on.exit(setwd(olddir))
   setwd(tempdir())
-  testfile <- system.file("data/Rdata.rdb", package = "nycflights13")
-  file.copy(testfile, "input.bin")
+  buf <- serialize(rnorm(1e6), NULL)
+  writeBin(buf, "input.bin")
   if(is_windows){
     res1 <- exec_wait("cmd", c("/C", "type", "input.bin"), std_out = "out1.bin")
     res2 <- exec_wait("cmd", c("/C", "type", "input.bin", ">&2"), std_err = "out2.bin")
