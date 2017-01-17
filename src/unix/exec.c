@@ -78,7 +78,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     }
 
     //prevents signals from being propagated to fork
-    setpgid(0, 0);
+    if(setpgid(0, 0)){
+      REprintf("Failed to setpgid in fork!");
+    }
 
     // close STDIN for fork
     close(STDIN_FILENO);
