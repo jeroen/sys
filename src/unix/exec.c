@@ -10,6 +10,12 @@
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
 #define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
 
+int exec_has_failed;
+void sig_handler(int signo) {
+  if(signo == SIGUSR2)
+    exec_has_failed = 1;
+}
+
 /* Check for interrupt without long jumping */
 void check_interrupt_fn(void *dummy) {
   R_CheckUserInterrupt();
@@ -41,16 +47,20 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
       Rf_errorcall(R_NilValue, "Failed to create pipe");
   }
 
+  //SIGUSR2 sets exec_has_failed
+  exec_has_failed = 0;
+  signal(SIGUSR2, SIG_DFL);
+  if (signal(SIGUSR2, sig_handler) == SIG_ERR)
+    REprintf("Can't catch SIGUSR2\n"); //not fatal, just suboptimal
+
   //fork the main process
+  pid_t parent = getpid();
   pid_t pid = fork();
   if(pid < 0)
     Rf_errorcall(R_NilValue, "Failed to fork");
 
   //CHILD PROCESS
   if(pid == 0){
-    //unset potential signal handler
-    signal(SIGHUP, NULL);
-
     if(block){
       // send stdout to the pipe
       dup2(pipe_out[1], STDOUT_FILENO);
@@ -101,9 +111,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
     // signal is picked up by WTERMSIG() in parent proc
-    raise(SIGHUP);
+    kill(parent, SIGUSR2);
 
-    //not allowed by CRAN. raise() should suffice
+    //exit() not allowed by CRAN. raise() should suffice
+    raise(SIGKILL);
     //exit(EXIT_FAILURE);
 
     //should never happen
@@ -120,7 +131,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
         break;
       usleep(10000);
     }
-    if(WTERMSIG(status) == SIGHUP)
+    if(exec_has_failed)
       Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
     return ScalarInteger(pid);
   }
@@ -150,12 +161,12 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   }
   close(pipe_out[0]);
   close(pipe_err[0]);
+  if(exec_has_failed)
+    Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
   if(WIFEXITED(status)){
     return ScalarInteger(WEXITSTATUS(status));
   } else {
     int signal = WTERMSIG(status);
-    if(signal == SIGHUP)
-      Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
     if(signal != 0)
       Rf_errorcall(R_NilValue, "Program '%s' terminated by SIGNAL (%s)", CHAR(STRING_ELT(command, 0)), strsignal(signal));
     Rf_errorcall(R_NilValue, "Program terminated abnormally");
