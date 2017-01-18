@@ -48,6 +48,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
   //CHILD PROCESS
   if(pid == 0){
+    //unset potential signal handler
+    signal(SIGHUP, NULL);
+
     if(block){
       // send stdout to the pipe
       dup2(pipe_out[1], STDOUT_FILENO);
@@ -78,9 +81,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     }
 
     //prevents signals from being propagated to fork
-    if(setpgid(0, 0)){
-      REprintf("Failed to setpgid in fork!");
-    }
+    setpgid(0, 0);
 
     // close STDIN for fork
     close(STDIN_FILENO);
