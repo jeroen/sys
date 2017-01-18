@@ -5,15 +5,28 @@
 #include <signal.h>
 #include <string.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #define IS_STRING(x) (Rf_isString(x) && Rf_length(x))
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
 #define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
 
-int exec_has_failed;
+/* check for system errors */
+void bail_if(int err, const char * what){
+  if(err)
+    Rf_errorcall(R_NilValue, "System failure for: %s (%s)", what, strerror(errno));
+}
+
+void warn_if(int err, const char * what){
+  if(err)
+    Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, strerror(errno));
+}
+
+/* pick up the case where execvp fails */
+int exec_has_failed_in_child;
 void sig_handler(int signo) {
   if(signo == SIGUSR2)
-    exec_has_failed = 1;
+    exec_has_failed_in_child = 1;
 }
 
 /* Check for interrupt without long jumping */
@@ -42,40 +55,39 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   int pipe_err[2];
 
   //create pipes only in blocking mode
-  if(block){
-    if(pipe(pipe_out) || pipe(pipe_err))
-      Rf_errorcall(R_NilValue, "Failed to create pipe");
-  }
+  if(block)
+    bail_if(pipe(pipe_out) || pipe(pipe_err), "create pipe");
 
-  //SIGUSR2 sets exec_has_failed
-  exec_has_failed = 0;
+  //SIGUSR2 sets exec_has_failed_in_child
+  exec_has_failed_in_child = 0;
   signal(SIGUSR2, SIG_DFL);
-  if (signal(SIGUSR2, sig_handler) == SIG_ERR)
-    REprintf("Can't catch SIGUSR2\n"); //not fatal, just suboptimal
+  if (signal(SIGUSR2, sig_handler) == SIG_ERR){
+    //not fatal, just suboptimal
+    REprintf("Setting signal handler for SIGUSR2 failed\n");
+  }
 
   //fork the main process
   pid_t parent = getpid();
   pid_t pid = fork();
-  if(pid < 0)
-    Rf_errorcall(R_NilValue, "Failed to fork");
+  bail_if(pid < 0, "fork()");
 
   //CHILD PROCESS
   if(pid == 0){
     if(block){
       // send stdout to the pipe
-      dup2(pipe_out[1], STDOUT_FILENO);
+      bail_if(dup2(pipe_out[1], STDOUT_FILENO) < 0, "dup2() stdout");
       close(pipe_out[0]);
       close(pipe_out[1]);
 
       //send stderr to the pipe
-      dup2(pipe_err[1], STDERR_FILENO);
+      bail_if(dup2(pipe_err[1], STDERR_FILENO) < 0, "dup2() stderr");
       close(pipe_err[0]);
       close(pipe_err[1]);
     } else {
       if(IS_STRING(outfun)){
         const char * file = CHAR(STRING_ELT(outfun, 0));
         int fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-        dup2(fd, STDOUT_FILENO);
+        bail_if(dup2(fd, STDOUT_FILENO) < 0, "dup2() stdout");
         close(fd);
       } else if(!IS_TRUE(outfun)){
         close(STDOUT_FILENO);
@@ -83,7 +95,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
       if(IS_STRING(errfun)){
         const char * file = CHAR(STRING_ELT(errfun, 0));
         int fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-        dup2(fd, STDERR_FILENO);
+        bail_if(dup2(fd, STDERR_FILENO) < 0, "dup2() stderr");
         close(fd);
       } else if(!IS_TRUE(errfun)){
         close(STDERR_FILENO);
@@ -131,7 +143,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
         break;
       usleep(10000);
     }
-    if(exec_has_failed)
+    if(exec_has_failed_in_child)
       Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
     return ScalarInteger(pid);
   }
@@ -149,8 +161,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   while (waitpid(pid, &status, WNOHANG) >= 0){
     if(pending_interrupt()){
       //pass interrupt to child
-      kill(pid, SIGINT);
-      //picked up below
+      warn_if(kill(pid, SIGINT), "kill child");
     }
     //make sure to empty the pipes, even if fun == NULL
     ssize_t len;
@@ -159,9 +170,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     while ((len = read(pipe_err[0], buffer, sizeof(buffer))) > 0)
       R_callback(errfun, buffer, len);
   }
-  close(pipe_out[0]);
-  close(pipe_err[0]);
-  if(exec_has_failed)
+  warn_if(close(pipe_out[0]), "close stdout");
+  warn_if(close(pipe_err[0]), "close stderr");
+  if(exec_has_failed_in_child)
     Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
   if(WIFEXITED(status)){
     return ScalarInteger(WEXITSTATUS(status));
