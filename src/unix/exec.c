@@ -33,7 +33,7 @@ void check_child_success(int fd, int timeout_ms, const char * cmd){
   if(ufds[0].revents & POLLERR) Rprintf("POLLERR in poll()\n");
   if(ufds[0].revents & POLLNVAL) Rprintf("POLLNVAL in poll()\n");
   if(ufds[0].revents & POLLIN)
-    read(fd, &child_errno, sizeof(child_errno));
+    bail_if(read(fd, &child_errno, sizeof(child_errno)) < 0, "read() failure pipe");
   close(fd);
   if(child_errno)
     Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, strerror(child_errno));
@@ -132,7 +132,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
     //execvp failed! Send errno to parent
-    write(failure[1], &errno, sizeof(errno));
+    warn_if(write(failure[1], &errno, sizeof(errno)) < 0, "write to failure pipe");
     close(failure[1]);
 
     //exit() not allowed by CRAN. raise() should suffice
