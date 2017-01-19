@@ -6,6 +6,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <poll.h>
 
 #define IS_STRING(x) (Rf_isString(x) && Rf_length(x))
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
@@ -22,11 +23,21 @@ void warn_if(int err, const char * what){
     Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, strerror(errno));
 }
 
-/* pick up the case where execvp fails */
-int exec_has_failed_in_child;
-void sig_handler(int signo) {
-  if(signo == SIGUSR2)
-    exec_has_failed_in_child = 1;
+void check_child_success(int fd, int timeout_ms, const char * cmd){
+  int child_errno = 0;
+  struct pollfd ufds[1];
+  ufds[0].fd = fd;
+  ufds[0].events = POLLIN;
+  int res = poll(ufds, 1, timeout_ms);
+  bail_if(res < 0, "poll() on failure pipe");
+  if(ufds[0].revents & POLLERR) Rprintf("POLLERR in poll()\n");
+  if(ufds[0].revents & POLLHUP) Rprintf("POLLHUP in poll()\n");
+  if(ufds[0].revents & POLLNVAL) Rprintf("POLLNVAL in poll()\n");
+  if(ufds[0].revents & POLLIN)
+    read(fd, &child_errno, sizeof(child_errno));
+  close(fd);
+  if(child_errno)
+    Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, strerror(child_errno));
 }
 
 /* Check for interrupt without long jumping */
@@ -53,21 +64,16 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   int block = asLogical(wait);
   int pipe_out[2];
   int pipe_err[2];
+  int failure[2];
 
   //create pipes only in blocking mode
   if(block)
     bail_if(pipe(pipe_out) || pipe(pipe_err), "create pipe");
 
-  //SIGUSR2 sets exec_has_failed_in_child
-  exec_has_failed_in_child = 0;
-  signal(SIGUSR2, SIG_DFL);
-  if (signal(SIGUSR2, sig_handler) == SIG_ERR){
-    //not fatal, just suboptimal
-    REprintf("Setting signal handler for SIGUSR2 failed\n");
-  }
+  //setup failure pipe
+  bail_if(pipe(failure), "pipe(failure)");
 
   //fork the main process
-  pid_t parent = getpid();
   pid_t pid = fork();
   bail_if(pid < 0, "fork()");
 
@@ -109,7 +115,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     close(STDIN_FILENO);
 
     //close all file descriptors before exit, otherwise they can segfault
-    for (int i = 3; i < sysconf(_SC_OPEN_MAX); i++) close(i);
+    for (int i = 3; i < sysconf(_SC_OPEN_MAX); i++) {
+      if(i != failure[1])
+        close(i);
+    }
 
     //prepare execv
     int len = Rf_length(args);
@@ -120,31 +129,24 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     }
 
     //execvp never returns if successful
+    close(failure[0]);
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
-    // signal is picked up by WTERMSIG() in parent proc
-    kill(parent, SIGUSR2);
+    //execvp failed! Send errno to parent
+    write(failure[1], &errno, sizeof(errno));
+    close(failure[1]);
 
     //exit() not allowed by CRAN. raise() should suffice
-    raise(SIGKILL);
     //exit(EXIT_FAILURE);
-
-    //should never happen
-    return NULL;
+    raise(SIGKILL);
   }
 
   //PARENT PROCESS:
   int status = 0;
 
-  //non blocking mode: wait for 0.5 sec for possible SIGHUP from child
+  //non blocking mode: wait for 0.5 sec for possible error from child
   if(!block){
-    for(int i = 0; i < 50; i++){
-      if(waitpid(pid, &status, WNOHANG))
-        break;
-      usleep(10000);
-    }
-    if(exec_has_failed_in_child)
-      Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
+    check_child_success(failure[0], 500, CHAR(STRING_ELT(command, 0)));
     return ScalarInteger(pid);
   }
 
@@ -172,8 +174,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   }
   warn_if(close(pipe_out[0]), "close stdout");
   warn_if(close(pipe_err[0]), "close stderr");
-  if(exec_has_failed_in_child)
-    Rf_errorcall(R_NilValue, "Failed to execute '%s'", CHAR(STRING_ELT(command, 0)));
+
+  //check that execvp was successful
+  check_child_success(failure[0], 0, CHAR(STRING_ELT(command, 0)));
   if(WIFEXITED(status)){
     return ScalarInteger(WEXITSTATUS(status));
   } else {

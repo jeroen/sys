@@ -1,0 +1,6 @@
+1.1:
+  - Switch from SIGHUP to SIGKILL to kill child process
+  - Child now uses a pipe to send errno to parent when execvp() fails
+
+1.0:
+  - CRAN release
