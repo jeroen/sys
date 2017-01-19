@@ -31,7 +31,6 @@ void check_child_success(int fd, int timeout_ms, const char * cmd){
   int res = poll(ufds, 1, timeout_ms);
   bail_if(res < 0, "poll() on failure pipe");
   if(ufds[0].revents & POLLERR) Rprintf("POLLERR in poll()\n");
-  if(ufds[0].revents & POLLHUP) Rprintf("POLLHUP in poll()\n");
   if(ufds[0].revents & POLLNVAL) Rprintf("POLLNVAL in poll()\n");
   if(ufds[0].revents & POLLIN)
     read(fd, &child_errno, sizeof(child_errno));
@@ -142,6 +141,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   }
 
   //PARENT PROCESS:
+  close(failure[1]);
   int status = 0;
 
   //non blocking mode: wait for 0.5 sec for possible error from child
@@ -150,7 +150,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     return ScalarInteger(pid);
   }
 
-  //close write end of pipe
+  //blocking: close write end of IO pipes
   close(pipe_out[1]);
   close(pipe_err[1]);
 
