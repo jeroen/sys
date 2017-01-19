@@ -1,6 +1,6 @@
 context("error handling")
 
-test_that("run ping is available", {
+test_that("catching execution errors", {
   sysname <- tolower(Sys.info()[["sysname"]])
   args <- switch(sysname,
      windows = c("-n 2", "localhost"),
@@ -8,25 +8,27 @@ test_that("run ping is available", {
      linux = c("-c2", "localhost"),
      sunos = c("-s", "localhost", "64", "2")
   )
-  expect_equal(exec_wait("ping", args, std_out = FALSE), 0)
-})
 
-test_that("error is raised for invalid executable",{
+  # Test that 'ping' is on the path
+  out <- system2("ping", args, stderr = FALSE, stdout = FALSE)
+  skip_if_not(out == 0, "ping utility is not available")
+
+  # Run ping
+  expect_equal(exec_wait("ping", args, std_out = FALSE), 0)
+
+  # Error for non existing program
   expect_error(exec_wait("doesnotexist"), "Failed to execute")
   expect_error(exec_background("doesnotexist"), "Failed to execute")
 
-  # without stdout
+  # Same without stdout
   expect_error(exec_wait("doesnotexist", std_out = FALSE, std_err = FALSE), "Failed to execute")
   expect_error(exec_background("doesnotexist", std_out = FALSE, std_err = FALSE), "Failed to execute")
-})
 
-
-test_that("no error is raised for program error", {
+  # Program error
   expect_is(exec_wait("ping", "999.999.999.999.999", std_err = FALSE, std_out = FALSE), "integer")
   expect_is(exec_background("ping", "999.999.999.999.999", std_err = FALSE, std_out = FALSE), "integer")
-})
 
-test_that("exec_internal automatically raises error", {
+  # Program error with exec_internal
   expect_error(exec_internal('ping', "999.999.999.999.999"))
   out <- exec_internal('ping', "999.999.999.999.999", error = FALSE)
   expect_gt(out$status, 0)
