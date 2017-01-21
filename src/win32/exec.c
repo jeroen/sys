@@ -11,6 +11,17 @@
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
 #define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
 
+/* check for system errors */
+void bail_if(int err, const char * what){
+  if(err)
+    Rf_errorcall(R_NilValue, "System failure for: %s (%s)", what, strerror(GetLastError()));
+}
+
+void warn_if(int err, const char * what){
+  if(err)
+    Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, strerror(GetLastError()));
+}
+
 /* Check for interrupt without long jumping */
 void check_interrupt_fn(void *dummy) {
   R_CheckUserInterrupt();
@@ -58,8 +69,7 @@ static DWORD WINAPI PrintErr(HANDLE pipe){
 void ReadFromPipe(SEXP fun, HANDLE pipe){
   unsigned long len = 1;
   while(1){
-    if(!PeekNamedPipe(pipe, NULL, 0, NULL, &len, NULL))
-      Rf_errorcall(R_NilValue, "PeekNamedPipe failed");
+    bail_if(!PeekNamedPipe(pipe, NULL, 0, NULL, &len, NULL), "PeekNamedPipe");
     if(!len)
       break;
     char buffer[len];
@@ -75,8 +85,10 @@ HANDLE fd(const char * path){
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
   DWORD dwFlags = FILE_ATTRIBUTE_NORMAL;
-  return CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+  HANDLE out = CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
                     &sa, CREATE_ALWAYS, dwFlags, NULL);
+  bail_if(out == INVALID_HANDLE_VALUE, "CreateFile");
+  return out;
 }
 
 BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
@@ -103,20 +115,16 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
   //set STDOUT pipe
   if(block || IS_TRUE(outfun)){
-    if (!CreatePipe(&pipe_out, &si.hStdOutput, &sa, 0))
-      Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
-    if (!SetHandleInformation(pipe_out, HANDLE_FLAG_INHERIT, 0))
-      Rf_errorcall(R_NilValue, "SetHandleInformation failed");
+    bail_if(!CreatePipe(&pipe_out, &si.hStdOutput, &sa, 0), "CreatePipe stdout");
+    bail_if(!SetHandleInformation(pipe_out, HANDLE_FLAG_INHERIT, 0), "SetHandleInformation stdout");
   } else if(IS_STRING(outfun)){
     si.hStdOutput = fd(CHAR(STRING_ELT(outfun, 0)));
   }
 
   //set STDERR
   if(block || IS_TRUE(errfun)){
-    if (!CreatePipe(&pipe_err, &si.hStdError, &sa, 0))
-      Rf_errorcall(R_NilValue, "Failed to creat stdout pipe");
-    if (!SetHandleInformation(pipe_err, HANDLE_FLAG_INHERIT, 0))
-      Rf_errorcall(R_NilValue, "SetHandleInformation failed");
+    bail_if(!CreatePipe(&pipe_err, &si.hStdError, &sa, 0), "CreatePipe stderr");
+    bail_if(!SetHandleInformation(pipe_err, HANDLE_FLAG_INHERIT, 0), "SetHandleInformation stdout");
   } else if(IS_STRING(errfun)){
     si.hStdError = fd(CHAR(STRING_ELT(errfun, 0)));
   }
@@ -130,7 +138,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   }
   PROCESS_INFORMATION pi = {0};
   if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED, NULL, NULL, &si, &pi))
-    Rf_errorcall(R_NilValue, "Failed to execute '%s'", cmd);
+    Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, strerror(GetLastError()));
 
   //CloseHandle(pi.hThread);
   DWORD pid = GetProcessId(pi.hProcess);
@@ -139,8 +147,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
   //A 'job' is some sort of process container
   HANDLE job = CreateJobObject(NULL, NULL);
-  if(!AssignProcessToJobObject(job, proc))
-    Rf_errorcall(R_NilValue, "AssignProcessToJobObject failed: %d", GetLastError());
+  bail_if(!AssignProcessToJobObject(job, proc), "AssignProcessToJobObject");
   ResumeThread(thread);
   CloseHandle(thread);
 
@@ -164,16 +171,16 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
       }
     }
     DWORD exit_code;
-    CloseHandle(pipe_out);
-    CloseHandle(pipe_err);
-    GetExitCodeProcess(proc, &exit_code);
+    warn_if(!CloseHandle(pipe_out), "CloseHandle pipe_out");
+    warn_if(!CloseHandle(pipe_err), "CloseHandle pipe_err");
+    warn_if(GetExitCodeProcess(proc, &exit_code) == 0, "GetExitCodeProcess");
     res = exit_code; //if wait=TRUE, return exit code
   } else {
     //create background threads to print stdout/stderr
     if(IS_TRUE(outfun))
-      CreateThread(NULL, 0, PrintOut, pipe_out, 0, 0);
+      bail_if(!CreateThread(NULL, 0, PrintOut, pipe_out, 0, 0), "CreateThread stdout");
     if(IS_TRUE(errfun))
-      CreateThread(NULL, 0, PrintErr, pipe_err, 0, 0);
+      bail_if(!CreateThread(NULL, 0, PrintErr, pipe_err, 0, 0), "CreateThread stderr");
   }
   CloseHandle(proc);
   CloseHandle(job);
