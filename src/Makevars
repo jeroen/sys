@@ -1,4 +1,1 @@
-all: clean
-
-clean:
-	rm -Rf $(SHLIB) $(OBJECTS)
+OBJECTS = unix/exec.o
