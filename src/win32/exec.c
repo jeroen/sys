@@ -11,15 +11,33 @@
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
 #define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
 
+/* copy from R source */
+
+const char *formatError(DWORD res){
+  static char buf[1000], *p;
+  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL, res,
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                buf, 1000, NULL);
+  p = buf+strlen(buf) -1;
+  if(*p == '\n') *p = '\0';
+  p = buf+strlen(buf) -1;
+  if(*p == '\r') *p = '\0';
+  p = buf+strlen(buf) -1;
+  if(*p == '.') *p = '\0';
+  return buf;
+}
+
+
 /* check for system errors */
 void bail_if(int err, const char * what){
   if(err)
-    Rf_errorcall(R_NilValue, "System failure for: %s (%s)", what, strerror(GetLastError()));
+    Rf_errorcall(R_NilValue, "System failure for: %s (%s)", what, formatError(GetLastError()));
 }
 
 void warn_if(int err, const char * what){
   if(err)
-    Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, strerror(GetLastError()));
+    Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, formatError(GetLastError()));
 }
 
 /* Check for interrupt without long jumping */
@@ -138,7 +156,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   }
   PROCESS_INFORMATION pi = {0};
   if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED, NULL, NULL, &si, &pi))
-    Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, strerror(GetLastError()));
+    Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, formatError(GetLastError()));
 
   //CloseHandle(pi.hThread);
   DWORD pid = GetProcessId(pi.hProcess);
