@@ -1,12 +1,6 @@
 #include <Rinternals.h>
 #include <unistd.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
 #include <signal.h>
-#include <string.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <poll.h>
 
 static const int R_DefaultSerializeVersion = 2;
 void bail_if(int err, const char * what);
@@ -45,7 +39,7 @@ SEXP R_eval_fork(SEXP call, SEXP env){
   pipe(results);
 
   pid_t pid = fork();
-  int fail = 1;
+  int fail = 99;
   if(pid == 0){
     //close read pipe
     close(results[0]);
@@ -74,7 +68,10 @@ SEXP R_eval_fork(SEXP call, SEXP env){
 
   //check if raised error
   close(results[1]);
-  bail_if(read(results[0], &fail, sizeof(fail)) < 0, "read pipe");
+  int bytes = read(results[0], &fail, sizeof(fail));
+  bail_if(bytes < 0, "read pipe");
+  if(bytes == 0)
+    Rf_errorcall(call, "child process died");
 
   //unserialize stream
   struct R_inpstream_st stream;
@@ -88,14 +85,16 @@ SEXP R_eval_fork(SEXP call, SEXP env){
   //TODO: this can raise an error!
   SEXP res = R_Unserialize(&stream);
 
-  if(fail){
-    const char * err = "R process died";
-    if(isString(res))
+  //Check for error
+  if(fail == 1){
+    const char * err = "unknown error in forked process";
+    if(isString(res) && Rf_length(res))
       err = CHAR(STRING_ELT(res, 0)) + 7;
     Rf_errorcall(call, err);
   }
 
   //cleanup and return
+  kill(pid, SIGKILL);
   close(results[0]);
   return res;
 }
