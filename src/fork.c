@@ -5,7 +5,7 @@
 #include <signal.h>
 #include <string.h>
 
-int R_isForkedChild;
+extern Rboolean R_isForkedChild;
 static const int R_DefaultSerializeVersion = 2;
 void bail_if(int err, const char * what);
 
