@@ -4,7 +4,7 @@
 \alias{eval_fork}
 \title{Evaluate in fork}
 \usage{
-eval_fork(expr, envir = parent.frame(), tmp = tempfile())
+eval_fork(expr, envir = parent.frame(), tmp = tempfile("fork"))
 }
 \arguments{
 \item{expr}{expression to evaluate}
