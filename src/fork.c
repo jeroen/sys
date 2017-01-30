@@ -36,7 +36,7 @@ static int InCharCB(R_inpstream_t stream){
 
 SEXP R_eval_fork(SEXP call, SEXP env){
   int results[2];
-  pipe(results);
+  bail_if(pipe(results), "create pipe");
 
   pid_t pid = fork();
   int fail = 99;
