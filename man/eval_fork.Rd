@@ -4,12 +4,14 @@
 \alias{eval_fork}
 \title{Evaluate in fork}
 \usage{
-eval_fork(expr, envir = parent.frame())
+eval_fork(expr, envir = parent.frame(), tmp = tempfile())
 }
 \arguments{
 \item{expr}{expression to evaluate}
 
-\item{envir}{the \link{environment} in which expr is to be evaluated.}
+\item{envir}{the \link{environment} in which expr is to be evaluated}
+
+\item{tmp}{the value of \link{tempdir} inside the forked process}
 }
 \description{
 Replacement for \link{eval} or \link[parallel:mcparallel]{mcparallel} which evaluates an

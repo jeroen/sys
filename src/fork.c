@@ -1,7 +1,11 @@
 #include <Rinternals.h>
+#include <Rinterface.h>
+#include <Rembedded.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 
+int R_isForkedChild;
 static const int R_DefaultSerializeVersion = 2;
 void bail_if(int err, const char * what);
 
@@ -34,7 +38,7 @@ static int InCharCB(R_inpstream_t stream){
   return val;
 }
 
-SEXP R_eval_fork(SEXP call, SEXP env){
+SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
   int results[2];
   bail_if(pipe(results), "create pipe");
 
@@ -42,6 +46,9 @@ SEXP R_eval_fork(SEXP call, SEXP env){
   int fail = 99;
   if(pid == 0){
     //close read pipe
+    R_isForkedChild = 1;
+    R_Interactive = 0;
+    R_TempDir = strdup(CHAR(STRING_ELT(subtmp, 0)));
     close(results[0]);
 
     //execute
@@ -85,6 +92,10 @@ SEXP R_eval_fork(SEXP call, SEXP env){
   //TODO: this can raise an error!
   SEXP res = R_Unserialize(&stream);
 
+  //cleanup
+  kill(pid, SIGKILL);
+  close(results[0]);
+
   //Check for error
   if(fail == 1){
     const char * err = "unknown error in forked process";
@@ -92,9 +103,5 @@ SEXP R_eval_fork(SEXP call, SEXP env){
       err = CHAR(STRING_ELT(res, 0)) + 7;
     Rf_errorcall(call, err);
   }
-
-  //cleanup and return
-  kill(pid, SIGKILL);
-  close(results[0]);
   return res;
 }
