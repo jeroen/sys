@@ -160,11 +160,12 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
   //status -1 means error, 0 means running
   char buffer[65336];
+  int killcount = 0;
   while (waitpid(pid, &status, WNOHANG) >= 0){
     if(pending_interrupt()){
-      //pass interrupt to child
-      warn_if(kill(pid, SIGINT), "kill child");
-      waitpid(pid, NULL, 0); //wait for it to die, otherwise child becomes zombie
+      //pass interrupt to child. On second try we SIGKILL.
+      warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
+      killcount++;
     }
     //make sure to empty the pipes, even if fun == NULL
     ssize_t len;
