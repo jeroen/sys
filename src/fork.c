@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <sys/wait.h>
 
 extern Rboolean R_isForkedChild;
 static const int R_DefaultSerializeVersion = 2;
@@ -93,8 +94,11 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
   SEXP res = R_Unserialize(&stream);
 
   //cleanup
-  kill(pid, SIGKILL);
   close(results[0]);
+  kill(pid, SIGKILL);
+
+  //wait for child to die, otherwise it turns into zombie
+  waitpid(pid, NULL, 0);
 
   //Check for error
   if(fail == 1){
