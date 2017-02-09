@@ -14,9 +14,4 @@ eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork")){
   .Call(R_eval_fork, substitute(expr), envir, tmp)
 }
 
-#' @importFrom parallel mcparallel
-set_interactive <- function(set){
-  C_mc_interactive <- utils::getFromNamespace('C_mc_interactive', "parallel")
-  .Call(C_mc_interactive, set)
-}
 
