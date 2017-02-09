@@ -4,11 +4,15 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <poll.h>
 #include <sys/wait.h>
 
 extern Rboolean R_isForkedChild;
+extern void warn_if(int err, const char * what);
+extern void bail_if(int err, const char * what);
+extern int pending_interrupt();
+
 static const int R_DefaultSerializeVersion = 2;
-void bail_if(int err, const char * what);
 
 /* Callback functions to serialize/unserialize via the pipe */
 static void OutBytesCB(R_outpstream_t stream, void * buf, int size){
@@ -39,7 +43,7 @@ static int InCharCB(R_inpstream_t stream){
   return val;
 }
 
-void serialize_to_pipe(SEXP object, int results[2]){
+static void serialize_to_pipe(SEXP object, int results[2]){
   //serialize output
   struct R_outpstream_st stream;
   stream.data = results;
@@ -54,7 +58,7 @@ void serialize_to_pipe(SEXP object, int results[2]){
   R_Serialize(object, &stream);
 }
 
-SEXP unserialize_from_pipe(int results[2]){
+static SEXP unserialize_from_pipe(int results[2]){
   //unserialize stream
   struct R_inpstream_st stream;
   stream.data = results;
@@ -93,13 +97,25 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
     raise(SIGKILL);
   }
 
-  //check if raised error
+  //wait for pipe to hear from child
   close(results[1]);
+  struct pollfd ufds = {results[0], POLLIN, POLLIN};
+  int status = 0;
+  int killcount = 0;
+  while(status < 1){
+    status = poll(&ufds, 1, 200);
+    if(pending_interrupt()){
+      warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
+      killcount++;
+    }
+  }
+  bail_if(status < 0, "poll() on failure pipe");
   int bytes = read(results[0], &fail, sizeof(fail));
   bail_if(bytes < 0, "read pipe");
   if(bytes == 0)
-    Rf_errorcall(call, "child process died");
+    Rf_errorcall(call, killcount ? "process interrupted by parent" : "child process died");
 
+  //read data
   SEXP res = unserialize_from_pipe(results);
 
   //cleanup
