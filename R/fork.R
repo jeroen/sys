@@ -1,7 +1,9 @@
 #' Evaluate in fork
 #'
-#' Replacement for [eval] or [mcparallel][parallel::mcparallel] which evaluates an
-#' expression in a temporary fork so that it has no side effects on the main R session.
+#' Version of [eval] which evaluates expression in a temporary fork so
+#' that it has no side effects on the main R session.
+#' Basically a robust version of `mccollect(mcparallel(expr))`.
+#' Not available on Windows because it required `fork()`.
 #'
 #' @export
 #' @useDynLib sys R_eval_fork

@@ -14,6 +14,8 @@ eval_fork(expr, envir = parent.frame(), tmp = tempfile("fork"))
 \item{tmp}{the value of \link{tempdir} inside the forked process}
 }
 \description{
-Replacement for \link{eval} or \link[parallel:mcparallel]{mcparallel} which evaluates an
-expression in a temporary fork so that it has no side effects on the main R session.
+Version of \link{eval} which evaluates expression in a temporary fork so
+that it has no side effects on the main R session.
+Basically a robust version of \code{mccollect(mcparallel(expr))}.
+Not available on Windows because it required \code{fork()}.
 }

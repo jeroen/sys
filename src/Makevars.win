@@ -1,1 +1,6 @@
 OBJECTS = win32/exec.o
+
+all: clean
+
+clean:
+	rm -f $(SHLIB) $(OBJECTS)
