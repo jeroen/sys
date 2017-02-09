@@ -206,3 +206,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   CloseHandle(si.hStdOutput);
   return ScalarInteger(res);
 }
+
+SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
+  Rf_error("eval_fork not available on windows");
+}
