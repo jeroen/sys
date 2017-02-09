@@ -4,7 +4,8 @@
 \alias{eval_fork}
 \title{Evaluate in fork}
 \usage{
-eval_fork(expr, envir = parent.frame(), tmp = tempfile("fork"))
+eval_fork(expr, envir = parent.frame(), tmp = tempfile("fork"),
+  timeout = Inf)
 }
 \arguments{
 \item{expr}{expression to evaluate}
@@ -12,6 +13,8 @@ eval_fork(expr, envir = parent.frame(), tmp = tempfile("fork"))
 \item{envir}{the \link{environment} in which expr is to be evaluated}
 
 \item{tmp}{the value of \link{tempdir} inside the forked process}
+
+\item{timeout}{maximum time in seconds to allow for call to return}
 }
 \description{
 Version of \link{eval} which evaluates expression in a temporary fork so

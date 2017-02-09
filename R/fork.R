@@ -10,10 +10,9 @@
 #' @param expr expression to evaluate
 #' @param envir the [environment] in which expr is to be evaluated
 #' @param tmp the value of [tempdir] inside the forked process
-eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork")){
+#' @param timeout maximum time in seconds to allow for call to return
+eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), timeout = Inf){
   if(!file.exists(tmp))
     dir.create(tmp)
-  .Call(R_eval_fork, substitute(expr), envir, tmp)
+  .Call(R_eval_fork, substitute(expr), envir, tmp, timeout)
 }
-
-

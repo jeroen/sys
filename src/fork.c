@@ -12,6 +12,9 @@ extern void warn_if(int err, const char * what);
 extern void bail_if(int err, const char * what);
 extern int pending_interrupt();
 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 static const int R_DefaultSerializeVersion = 2;
 
 /* Callback functions to serialize/unserialize via the pipe */
@@ -72,7 +75,13 @@ static SEXP unserialize_from_pipe(int results[2]){
   return R_Unserialize(&stream);
 }
 
-SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
+SEXP myfinalizer(){
+  Rprintf("Exiting!!!");
+  sleep(1);
+  return R_NilValue;
+}
+
+SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
   int results[2];
   bail_if(pipe(results), "create pipe");
 
@@ -104,12 +113,16 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
   struct pollfd ufds = {results[0], POLLIN, POLLIN};
   int status = 0;
   int killcount = 0;
+  int timeoutms = REAL(timeout)[0] * 1000;
+  int elapsedms = 0;
+  int waitms = MIN(200, timeoutms); //check at least each 200ms
   while(status < 1){
-    status = poll(&ufds, 1, 200);
-    if(pending_interrupt()){
+    if(pending_interrupt() || elapsedms >= timeoutms){
       warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
       killcount++;
     }
+    status = poll(&ufds, 1, waitms);
+    elapsedms += waitms;
   }
   bail_if(status < 0, "poll() on failure pipe");
 
@@ -118,6 +131,8 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
   bail_if(bytes < 0, "read pipe");
   if(bytes == 0)
     Rf_errorcall(call, killcount ? "process interrupted by parent" : "child process died");
+  if(killcount && elapsedms >= timeoutms)
+    Rf_errorcall(call, "timeout reached (%d ms)", timeoutms);
 
   //read data
   SEXP res = unserialize_from_pipe(results);
