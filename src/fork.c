@@ -39,6 +39,35 @@ static int InCharCB(R_inpstream_t stream){
   return val;
 }
 
+void serialize_to_pipe(SEXP object, int results[2]){
+  //serialize output
+  struct R_outpstream_st stream;
+  stream.data = results;
+  stream.type = R_pstream_xdr_format;
+  stream.version = R_DefaultSerializeVersion;
+  stream.OutChar = OutCharCB;
+  stream.OutBytes = OutBytesCB;
+  stream.OutPersistHookFunc = NULL;
+  stream.OutPersistHookData = R_NilValue;
+
+  //TODO: this can raise an error so that the process never dies!
+  R_Serialize(object, &stream);
+}
+
+SEXP unserialize_from_pipe(int results[2]){
+  //unserialize stream
+  struct R_inpstream_st stream;
+  stream.data = results;
+  stream.type = R_pstream_xdr_format;
+  stream.InPersistHookFunc = NULL;
+  stream.InPersistHookData = R_NilValue;
+  stream.InBytes = InBytesCB;
+  stream.InChar = InCharCB;
+
+  //TODO: this can raise an error!
+  return R_Unserialize(&stream);
+}
+
 SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
   int results[2];
   bail_if(pipe(results), "create pipe");
@@ -57,17 +86,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
     bail_if(write(results[1], &fail, sizeof(fail)) < 0, "write pipe");
 
     //serialize output
-    struct R_outpstream_st stream;
-    stream.data = results;
-    stream.type = R_pstream_xdr_format;
-    stream.version = R_DefaultSerializeVersion;
-    stream.OutChar = OutCharCB;
-    stream.OutBytes = OutBytesCB;
-    stream.OutPersistHookFunc = NULL;
-    stream.OutPersistHookData = R_NilValue;
-
-    //TODO: this can raise an error so that the process never dies!
-    R_Serialize(fail ? mkString(R_curErrorBuf()) : object, &stream);
+    serialize_to_pipe(fail ? mkString(R_curErrorBuf()) : object, results);
 
     //suicide
     close(results[1]);
@@ -81,17 +100,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
   if(bytes == 0)
     Rf_errorcall(call, "child process died");
 
-  //unserialize stream
-  struct R_inpstream_st stream;
-  stream.data = results;
-  stream.type = R_pstream_xdr_format;
-  stream.InPersistHookFunc = NULL;
-  stream.InPersistHookData = R_NilValue;
-  stream.InBytes = InBytesCB;
-  stream.InChar = InCharCB;
-
-  //TODO: this can raise an error!
-  SEXP res = R_Unserialize(&stream);
+  SEXP res = unserialize_from_pipe(results);
 
   //cleanup
   close(results[0]);
