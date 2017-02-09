@@ -87,6 +87,8 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
 
     //execute
     SEXP object = R_tryEval(call, env, &fail);
+
+    //send the 'success byte'
     bail_if(write(results[1], &fail, sizeof(fail)) < 0, "write pipe");
 
     //serialize output
@@ -110,6 +112,8 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
     }
   }
   bail_if(status < 0, "poll() on failure pipe");
+
+  //read the 'success byte'
   int bytes = read(results[0], &fail, sizeof(fail));
   bail_if(bytes < 0, "read pipe");
   if(bytes == 0)
