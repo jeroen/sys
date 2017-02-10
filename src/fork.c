@@ -115,7 +115,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
   int killcount = 0;
   int timeoutms = REAL(timeout)[0] * 1000;
   int elapsedms = 0;
-  int waitms = MIN(200, timeoutms); //check at least each 200ms
+  int waitms = 200; //check for interrupt or timeout every 200ms
   while(status < 1){
     if(pending_interrupt() || elapsedms >= timeoutms){
       warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");

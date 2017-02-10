@@ -5,7 +5,7 @@
 \title{Evaluate in fork}
 \usage{
 eval_fork(expr, envir = parent.frame(), tmp = tempfile("fork"),
-  timeout = Inf)
+  timeout = 60)
 }
 \arguments{
 \item{expr}{expression to evaluate}
