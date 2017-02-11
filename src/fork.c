@@ -110,7 +110,8 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
     bail_if(write(results[1], &fail, sizeof(fail)) < 0, "write pipe");
 
     //serialize output
-    serialize_to_pipe(fail || object == NULL ? mkString(R_curErrorBuf()) : object, results);
+    const char * errbuf = R_curErrorBuf();
+    serialize_to_pipe(fail || object == NULL ? mkString(errbuf ? errbuf : "unknown") : object, results);
 
     //suicide
     close(results[1]);
@@ -140,10 +141,8 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
   bail_if(bytes < 0, "read pipe");
   if(bytes == 0)
     Rf_errorcall(call, killcount ? "process interrupted by parent" : "child process died");
-  if(killcount && elapsedms >= timeoutms)
-    Rf_errorcall(call, "timeout reached (%d ms)", timeoutms);
 
-  //read data
+  //still alive: reading data
   SEXP res = unserialize_from_pipe(results);
 
   //cleanup
@@ -152,6 +151,13 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
 
   //wait for child to die, otherwise it turns into zombie
   waitpid(pid, NULL, 0);
+
+  //check if we had interrupted the process
+  if(killcount && elapsedms >= timeoutms)
+    Rf_errorcall(call, "timeout reached (%d ms)", timeoutms);
+
+  if(killcount)
+    Rf_errorcall(call, "process interrupted by parent");
 
   //Check for error
   if(fail == 1){
