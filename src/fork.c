@@ -158,7 +158,3 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
   }
   return res;
 }
-
-SEXP R_is_forked_process(){
-  return ScalarLogical(getpgid(0) == getpgid(getppid()));
-}
