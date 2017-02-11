@@ -11,6 +11,7 @@ extern Rboolean R_isForkedChild;
 extern void warn_if(int err, const char * what);
 extern void bail_if(int err, const char * what);
 extern int pending_interrupt();
+extern char * Sys_TempDir;
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -88,10 +89,15 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
   pid_t pid = fork();
   int fail = 99;
   if(pid == 0){
-    //close read pipe
+
+#ifndef R_SYS_BUILD_CLEAN
     R_isForkedChild = 1;
     R_Interactive = 0;
     R_TempDir = strdup(CHAR(STRING_ELT(subtmp, 0)));
+    Sys_TempDir = R_TempDir;
+#endif
+
+    //close read pipe
     close(results[0]);
 
     //execute
