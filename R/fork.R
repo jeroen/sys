@@ -16,3 +16,9 @@ eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
     dir.create(tmp)
   .Call(R_eval_fork, substitute(expr), envir, tmp, timeout)
 }
+
+#' @useDynLib sys R_is_forked_process
+#' @export
+is_fork <- function(){
+  .Call(R_is_forked_process)
+}

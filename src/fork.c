@@ -77,12 +77,6 @@ static SEXP unserialize_from_pipe(int results[2]){
   return R_Unserialize(&stream);
 }
 
-SEXP myfinalizer(){
-  Rprintf("Exiting!!!");
-  sleep(1);
-  return R_NilValue;
-}
-
 SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
   int results[2];
   bail_if(pipe(results), "create pipe");
@@ -163,4 +157,8 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
     Rf_errorcall(call, "unknown error");
   }
   return res;
+}
+
+SEXP R_is_forked_process(){
+  return ScalarLogical(getpgid(0) == getpgid(getppid()));
 }
