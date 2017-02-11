@@ -164,7 +164,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   while (waitpid(pid, &status, WNOHANG) >= 0){
     if(pending_interrupt()){
       //pass interrupt to child. On second try we SIGKILL.
-      warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
+      warn_if(kill(-pid, killcount ? SIGKILL : SIGINT), "kill child");
       killcount++;
     }
     //make sure to empty the pipes, even if fun == NULL
