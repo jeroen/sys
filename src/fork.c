@@ -111,7 +111,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
 
     //serialize output
     const char * errbuf = R_curErrorBuf();
-    serialize_to_pipe(fail || object == NULL ? mkString(errbuf ? errbuf : "unknown") : object, results);
+    serialize_to_pipe(fail || object == NULL ? mkString(errbuf ? errbuf : "unknown error in child") : object, results);
 
     //suicide
     close(results[1]);
@@ -152,19 +152,15 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
   //wait for child to die, otherwise it turns into zombie
   waitpid(pid, NULL, 0);
 
-  //check if we had interrupted the process
-  if(killcount && elapsedms >= timeoutms)
-    Rf_errorcall(call, "timeout reached (%d ms)", timeoutms);
-
-  if(killcount)
-    Rf_errorcall(call, "process interrupted by parent");
-
   //Check for error
-  if(fail == 1){
-    const char * err = "unknown error in forked process";
-    if(isString(res) && Rf_length(res))
-      err = CHAR(STRING_ELT(res, 0)) + 7;
-    Rf_errorcall(call, err);
+  if(fail){
+    if(killcount && elapsedms >= timeoutms)
+      Rf_errorcall(call, "timeout reached (%d ms)", timeoutms);
+    if(killcount)
+      Rf_errorcall(call, "process interrupted by parent");
+    if(isString(res) && Rf_length(res) && Rf_length(STRING_ELT(res, 0)) > 8)
+      Rf_errorcall(call, CHAR(STRING_ELT(res, 0)) + 7);
+    Rf_errorcall(call, "unknown error");
   }
   return res;
 }
