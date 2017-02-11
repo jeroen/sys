@@ -84,6 +84,8 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
   pid_t pid = fork();
   int fail = 99;
   if(pid == 0){
+    //prevents signals from being propagated to fork
+    setpgid(0, 0);
 
 #ifndef R_SYS_BUILD_CLEAN
     R_isForkedChild = 1;
@@ -141,7 +143,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
 
   //cleanup
   close(results[0]);
-  kill(pid, SIGKILL);
+  kill(-pid, SIGKILL); //kills entire process group
 
   //wait for child to die, otherwise it turns into zombie
   waitpid(pid, NULL, 0);
