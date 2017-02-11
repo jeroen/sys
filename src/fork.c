@@ -1,6 +1,7 @@
 #include <Rinternals.h>
 #include <Rinterface.h>
 #include <Rembedded.h>
+#include <Rconfig.h>
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
@@ -94,7 +95,9 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
     R_isForkedChild = 1;
     R_Interactive = 0;
     R_TempDir = strdup(CHAR(STRING_ELT(subtmp, 0)));
+    #ifndef HAVE_VISIBILITY_ATTRIBUTE
     Sys_TempDir = R_TempDir;
+    #endif
 #endif
 
     //close read pipe
@@ -107,7 +110,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
     bail_if(write(results[1], &fail, sizeof(fail)) < 0, "write pipe");
 
     //serialize output
-    serialize_to_pipe(fail ? mkString(R_curErrorBuf()) : object, results);
+    serialize_to_pipe(fail || object == NULL ? mkString(R_curErrorBuf()) : object, results);
 
     //suicide
     close(results[1]);
