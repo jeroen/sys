@@ -135,11 +135,9 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
   //read the 'success byte'
   int bytes = read(results[0], &fail, sizeof(fail));
   bail_if(bytes < 0, "read pipe");
-  if(bytes == 0)
-    Rf_errorcall(call, killcount ? "process interrupted by parent" : "child process died");
 
   //still alive: reading data
-  SEXP res = unserialize_from_pipe(results);
+  SEXP res = (bytes > 0) ? unserialize_from_pipe(results) : R_NilValue;
 
   //cleanup
   close(results[0]);
@@ -147,6 +145,10 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
 
   //wait for child to die, otherwise it turns into zombie
   waitpid(pid, NULL, 0);
+
+  //check for process error
+  if(bytes == 0)
+    Rf_errorcall(call, killcount ? "process interrupted by parent" : "child process died");
 
   //Check for error
   if(fail){
