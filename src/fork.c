@@ -147,9 +147,9 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
 
   //check for process error
   if(bytes == 0)
-    Rf_errorcall(call, killcount ? "process interrupted by parent" : "child process died");
+    Rf_errorcall(call, killcount ? "process died after interrupt" : "child process died");
 
-  //Check for error
+  //Check for failures. Rarely happens, R errors should get caucht by tryCatch.
   if(fail){
     if(killcount && elapsedms >= timeoutms)
       Rf_errorcall(call, "timeout reached (%d ms)", timeoutms);
@@ -159,5 +159,9 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
       Rf_errorcall(call, CHAR(STRING_ELT(res, 0)) + 7);
     Rf_errorcall(call, "unknown error");
   }
+
+  //add timeout attribute
+  if(inherits(res, "eval_fork_error") && killcount && elapsedms >= timeoutms)
+    Rf_setAttrib(res, install("timeout"), ScalarReal(elapsedms));
   return res;
 }

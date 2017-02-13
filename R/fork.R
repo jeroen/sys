@@ -13,15 +13,20 @@
 eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), timeout = 60){
   if(!file.exists(tmp))
     dir.create(tmp)
-  meta_expr <- call('tryCatch',
-    # could also specify 'interrupt' handler here
-    expr = call("eval", substitute(expr), envir),
+  clexpr <- call("eval", substitute(expr), envir)
+  trexpr <- call('tryCatch', expr = clexpr,
+    interrupt = function(e){
+      stop(simpleError("process interrupted by user", call = clexpr))
+    },
     error = function(e){
       structure(e, class = "eval_fork_error")
     }
   )
- out <- eval_fork_internal(meta_expr, envir, tmp, timeout)
+ out <- eval_fork_internal(trexpr, envir, tmp, timeout)
  if(inherits(out, "eval_fork_error")){
+   if(is.numeric(attr(out, "timeout"))){
+     stop(simpleError("timeout reached", out$call[[2]]))
+   }
    stop(simpleError(out$message, out$call[[2]]))
  }
  return(out)
