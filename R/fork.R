@@ -18,8 +18,7 @@ eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
   trexpr <- call('tryCatch', expr = clexpr,
     interrupt = function(e){
       stop(simpleError("process interrupted by user", call = trexpr))
-    },
-    error = function(e){
+    }, error = function(e){
       structure(e, class = "eval_fork_error")
     }
   )
