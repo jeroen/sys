@@ -162,6 +162,6 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
 
   //add timeout attribute
   if(inherits(res, "eval_fork_error") && killcount && elapsedms >= timeoutms)
-    Rf_setAttrib(res, install("timeout"), ScalarReal(elapsedms));
+    Rf_setAttrib(res, install("timeout"), ScalarLogical(TRUE));
   return res;
 }
