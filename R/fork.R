@@ -6,7 +6,6 @@
 #' Not available on Windows because it required `fork()`.
 #'
 #' @export
-#' @useDynLib sys R_eval_fork
 #' @param expr expression to evaluate
 #' @param envir the [environment] in which expr is to be evaluated
 #' @param tmp the value of [tempdir] inside the forked process
@@ -14,5 +13,21 @@
 eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), timeout = 60){
   if(!file.exists(tmp))
     dir.create(tmp)
-  .Call(R_eval_fork, substitute(expr), envir, tmp, timeout)
+  meta_expr <- call('tryCatch',
+    # could also specify 'interrupt' handler here
+    expr = call("eval", substitute(expr), envir),
+    error = function(e){
+      structure(e, class = "eval_fork_error")
+    }
+  )
+ out <- eval_fork_internal(meta_expr, envir, tmp, timeout)
+ if(inherits(out, "eval_fork_error")){
+   stop(simpleError(out$message, out$call[[2]]))
+ }
+ return(out)
+}
+
+#' @useDynLib sys R_eval_fork
+eval_fork_internal <- function(expr, envir, tmp, timeout){
+  .Call(R_eval_fork, expr, envir, tmp, timeout)
 }

@@ -102,12 +102,11 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
     //execute
     SEXP object = R_tryEval(call, env, &fail);
 
-    //send the 'success byte'
-    bail_if(write(results[1], &fail, sizeof(fail)) < 0, "write pipe");
-
-    //serialize output
-    const char * errbuf = R_curErrorBuf();
-    serialize_to_pipe(fail || object == NULL ? mkString(errbuf ? errbuf : "unknown error in child") : object, results);
+    //try to send the 'success byte' and then output
+    if(write(results[1], &fail, sizeof(fail)) > 0){
+      const char * errbuf = R_curErrorBuf();
+      serialize_to_pipe(fail || object == NULL ? mkString(errbuf ? errbuf : "unknown error in child") : object, results);
+    }
 
     //suicide
     close(results[1]);
