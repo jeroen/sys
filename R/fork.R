@@ -25,7 +25,7 @@ eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
  out <- eval_fork_internal(trexpr, envir, tmp, timeout)
  if(inherits(out, "eval_fork_error")){
    if(is.numeric(attr(out, "timeout"))){
-     stop(simpleError("timeout reached", out$call[[2]]))
+     stop(simpleError(sprintf("timeout reached (%dms)", timeout*1000), out$call[[2]]))
    }
    stop(simpleError(out$message, out$call[[2]]))
  }
