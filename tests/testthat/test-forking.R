@@ -29,8 +29,8 @@ test_that("eval_fork gives errors", {
   expect_error(eval_fork(Sys.sleep(10), timeout = 2), "timeout")
 
   # Test that tryCatch works
-  expect_equal(eval_fork(try(pi)), pi)
-  expect_is(eval_fork(try(blabla())), "try-error")
+  expect_equal(eval_fork(try(pi, silent = TRUE)), pi)
+  expect_is(eval_fork(try(blabla(), silent = TRUE)), "try-error")
   expect_is(eval_fork(tryCatch(blabla(), error = identity)), "simpleError")
 })
 
