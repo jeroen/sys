@@ -23,20 +23,13 @@ void warn_if(int err, const char * what){
     Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, strerror(errno));
 }
 
-void check_child_success(int fd, int timeout_ms, const char * cmd){
-  int child_errno = 0;
-  struct pollfd ufds[1];
-  ufds[0].fd = fd;
-  ufds[0].events = POLLIN;
-  int res = poll(ufds, 1, timeout_ms);
-  bail_if(res < 0, "poll() on failure pipe");
-  if(ufds[0].revents & POLLERR) Rprintf("POLLERR in poll()\n");
-  if(ufds[0].revents & POLLNVAL) Rprintf("POLLNVAL in poll()\n");
-  if(ufds[0].revents & POLLIN)
-    bail_if(read(fd, &child_errno, sizeof(child_errno)) < 0, "read() failure pipe");
+void check_child_success(int fd, const char * cmd){
+  int n, child_errno;
+  n = read(fd, &child_errno, sizeof(child_errno));
   close(fd);
-  if(child_errno)
+  if (n) {
     Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, strerror(child_errno));
+  }
 }
 
 /* Check for interrupt without long jumping */
@@ -128,7 +121,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     }
 
     //execvp never returns if successful
-    close(failure[0]);
+    fcntl(failure[1], F_SETFD, FD_CLOEXEC);
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
     //execvp failed! Send errno to parent
@@ -144,11 +137,8 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   close(failure[1]);
   int status = 0;
 
-  //non blocking mode: wait for 0.5 sec for possible error from child
-  if(!block){
-    check_child_success(failure[0], 500, CHAR(STRING_ELT(command, 0)));
-    return ScalarInteger(pid);
-  }
+  check_child_success(failure[0], CHAR(STRING_ELT(command, 0)));
+  if (!block) return ScalarInteger(pid);
 
   //blocking: close write end of IO pipes
   close(pipe_out[1]);
@@ -177,8 +167,6 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   warn_if(close(pipe_out[0]), "close stdout");
   warn_if(close(pipe_err[0]), "close stderr");
 
-  //check that execvp was successful
-  check_child_success(failure[0], 0, CHAR(STRING_ELT(command, 0)));
   if(WIFEXITED(status)){
     return ScalarInteger(WEXITSTATUS(status));
   } else {
