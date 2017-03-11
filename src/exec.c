@@ -134,9 +134,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
   //PARENT PROCESS:
   close(failure[1]);
-  check_child_success(failure[0], CHAR(STRING_ELT(command, 0)));
-  if (!block)
+  if (!block){
+    check_child_success(failure[0], CHAR(STRING_ELT(command, 0)));
     return ScalarInteger(pid);
+  }
 
   //blocking: close write end of IO pipes
   close(pipe_out[1]);
@@ -166,6 +167,8 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   warn_if(close(pipe_out[0]), "close stdout");
   warn_if(close(pipe_err[0]), "close stderr");
 
+  // check for execvp() error *after* closing pipes and zombie
+  check_child_success(failure[0], CHAR(STRING_ELT(command, 0)));
   if(WIFEXITED(status)){
     return ScalarInteger(WEXITSTATUS(status));
   } else {
