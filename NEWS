@@ -1,5 +1,8 @@
+
 1.2:
   - Windows: show informative system error messages on failures
+  - Unix: exec_background() does not wait for 1/2 a second
+    (#6, #7, @gaborcsardi)
 
 1.1:
   - Switch from SIGHUP to SIGKILL to kill child process
