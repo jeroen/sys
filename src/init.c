@@ -1,4 +1,3 @@
-
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
@@ -26,8 +25,10 @@ static void remove_signal_handler() {
   sigaction(SIGCHLD, &action, /* oldact= */ NULL);
 }
 
-void R_init_sys(DllInfo *dll) {
+void R_init_sys(DllInfo *info) {
   setup_signal_handler();
+  R_registerRoutines(info, NULL, NULL, NULL, NULL);
+  R_useDynamicSymbols(info, TRUE);
 }
 
 void R_unload_sys(DllInfo *dll) {
