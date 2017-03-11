@@ -11,6 +11,19 @@
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
 #define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
 
+/* prevent potential handlers from cleaning up exit codes */
+void suspend_sigchld(){
+  sigset_t block_sigchld;
+  sigaddset(&block_sigchld, SIGCHLD);
+  sigprocmask(SIG_BLOCK, &block_sigchld, NULL);
+}
+
+void resume_sigchild(){
+  sigset_t block_sigchld;
+  sigaddset(&block_sigchld, SIGCHLD);
+  sigprocmask(SIG_UNBLOCK, &block_sigchld, NULL);
+}
+
 /* check for system errors */
 void bail_if(int err, const char * what){
   if(err)
@@ -57,12 +70,14 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   int pipe_err[2];
   int failure[2];
 
-  //create pipes only in blocking mode
-  if(block)
-    bail_if(pipe(pipe_out) || pipe(pipe_err), "create pipe");
-
-  //setup failure pipe
+  //setup execvp errno pipe
   bail_if(pipe(failure), "pipe(failure)");
+
+  //create io pipes only in blocking mode
+  if(block){
+    bail_if(pipe(pipe_out) || pipe(pipe_err), "create pipe");
+    suspend_sigchld();
+  }
 
   //fork the main process
   pid_t pid = fork();
@@ -71,6 +86,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   //CHILD PROCESS
   if(pid == 0){
     if(block){
+      //undo blocking in child (is this needed at all?)
+      resume_sigchild();
+
       // send stdout to the pipe
       bail_if(dup2(pipe_out[1], STDOUT_FILENO) < 0, "dup2() stdout");
       close(pipe_out[0]);
@@ -168,7 +186,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   warn_if(close(pipe_err[0]), "close stderr");
 
   // check for execvp() error *after* closing pipes and zombie
+  resume_sigchild();
   check_child_success(failure[0], CHAR(STRING_ELT(command, 0)));
+
   if(WIFEXITED(status)){
     return ScalarInteger(WEXITSTATUS(status));
   } else {
