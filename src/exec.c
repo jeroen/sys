@@ -6,7 +6,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <poll.h>
 
 #define IS_STRING(x) (Rf_isString(x) && Rf_length(x))
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
@@ -24,8 +23,8 @@ void warn_if(int err, const char * what){
 }
 
 void check_child_success(int fd, const char * cmd){
-  int n, child_errno;
-  n = read(fd, &child_errno, sizeof(child_errno));
+  int child_errno;
+  int n = read(fd, &child_errno, sizeof(child_errno));
   close(fd);
   if (n) {
     Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, strerror(child_errno));
