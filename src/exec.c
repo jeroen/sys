@@ -14,12 +14,14 @@
 /* prevent potential handlers from cleaning up exit codes */
 void block_sigchld(){
   sigset_t block_sigchld;
+  sigemptyset(&block_sigchld);
   sigaddset(&block_sigchld, SIGCHLD);
   sigprocmask(SIG_BLOCK, &block_sigchld, NULL);
 }
 
 void resume_sigchild(){
   sigset_t block_sigchld;
+  sigemptyset(&block_sigchld);
   sigaddset(&block_sigchld, SIGCHLD);
   sigprocmask(SIG_UNBLOCK, &block_sigchld, NULL);
 }
