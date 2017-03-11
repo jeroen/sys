@@ -1,4 +1,4 @@
-OBJECTS = win32/exec.o register.o
+OBJECTS = win32/exec.o win32/init.o
 
 all: clean
 
