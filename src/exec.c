@@ -134,10 +134,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
   //PARENT PROCESS:
   close(failure[1]);
-  int status = 0;
-
   check_child_success(failure[0], CHAR(STRING_ELT(command, 0)));
-  if (!block) return ScalarInteger(pid);
+  if (!block)
+    return ScalarInteger(pid);
 
   //blocking: close write end of IO pipes
   close(pipe_out[1]);
@@ -148,8 +147,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   fcntl(pipe_err[0], F_SETFL, O_NONBLOCK);
 
   //status -1 means error, 0 means running
-  char buffer[65336];
+  int status = 0;
   int killcount = 0;
+  char buffer[65336];
   while (waitpid(pid, &status, WNOHANG) >= 0){
     if(pending_interrupt()){
       //pass interrupt to child. On second try we SIGKILL.
