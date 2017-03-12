@@ -6,6 +6,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <poll.h>
 
 #define IS_STRING(x) (Rf_isString(x) && Rf_length(x))
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
@@ -53,6 +54,16 @@ void check_interrupt_fn(void *dummy) {
 
 int pending_interrupt() {
   return !(R_ToplevelExec(check_interrupt_fn, NULL));
+}
+
+int wait_for_action(int fd1, int fd2){
+  int waitms = 500;
+  short events = POLLIN | POLLERR | POLLHUP;
+  struct pollfd ufds[2] = {
+    {fd1, events, events},
+    {fd2, events, events}
+  };
+  return poll(ufds, 2, waitms);
 }
 
 void R_callback(SEXP fun, const char * buf, ssize_t len){
@@ -179,6 +190,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     }
     //make sure to empty the pipes, even if fun == NULL
     ssize_t len;
+    wait_for_action(pipe_out[0], pipe_err[0]);
     while ((len = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
       R_callback(outfun, buffer, len);
     while ((len = read(pipe_err[0], buffer, sizeof(buffer))) > 0)
