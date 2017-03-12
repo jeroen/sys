@@ -207,6 +207,21 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   return ScalarInteger(res);
 }
 
+
+SEXP R_exec_status(SEXP rpid, SEXP wait){
+  DWORD exit_code = NA_INTEGER;
+  int pid = asInteger(rpid);
+  HANDLE proc = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, FALSE, pid);
+  bail_if(!proc, "OpenProcess()");
+  DWORD res = WAIT_TIMEOUT;
+  while(res == WAIT_TIMEOUT && !pending_interrupt()){
+    res = WaitForSingleObject(proc, 200);
+    bail_if(res == WAIT_FAILED, "WaitForSingleObject()");
+  }
+  warn_if(GetExitCodeProcess(proc, &exit_code) == 0, "GetExitCodeProcess");
+  return ScalarInteger(exit_code);
+}
+
 SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
   Rf_error("eval_fork not available on windows");
 }
