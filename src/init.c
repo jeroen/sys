@@ -26,7 +26,7 @@ static void remove_signal_handler() {
 }
 
 void R_init_sys(DllInfo *info) {
-  setup_signal_handler();
+  //setup_signal_handler();
   R_registerRoutines(info, NULL, NULL, NULL, NULL);
   R_useDynamicSymbols(info, TRUE);
 }

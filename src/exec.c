@@ -212,3 +212,16 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     Rf_errorcall(R_NilValue, "Program terminated abnormally");
   }
 }
+
+SEXP R_exec_status(SEXP rpid, SEXP wait){
+  int wstat = NA_INTEGER;
+  pid_t pid = asInteger(rpid);
+  do {
+    int res = waitpid(pid, &wstat, WNOHANG);
+    bail_if(res < 0, "waitpid()");
+    if(res)
+      break;
+    usleep(100*1000);
+  } while (asLogical(wait) && !pending_interrupt());
+  return ScalarInteger(wstat);
+}

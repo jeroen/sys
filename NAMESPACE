@@ -3,6 +3,8 @@
 export(eval_fork)
 export(exec_background)
 export(exec_internal)
+export(exec_status)
 export(exec_wait)
 useDynLib(sys,C_execute)
 useDynLib(sys,R_eval_fork)
+useDynLib(sys,R_exec_status)

@@ -6,6 +6,7 @@
 \alias{sys}
 \alias{exec_background}
 \alias{exec_internal}
+\alias{exec_status}
 \title{Running System Commands}
 \usage{
 exec_wait(cmd, args = NULL, std_out = stdout(), std_err = stderr())
@@ -13,6 +14,8 @@ exec_wait(cmd, args = NULL, std_out = stdout(), std_err = stderr())
 exec_background(cmd, args = NULL, std_out = TRUE, std_err = TRUE)
 
 exec_internal(cmd, args = NULL, error = TRUE)
+
+exec_status(pid, wait = TRUE)
 }
 \arguments{
 \item{cmd}{the command to run. Eiter a full path or the name of a program
@@ -29,6 +32,10 @@ on \emph{Output Streams} below for details.}
 on \emph{Output Streams} below for details.}
 
 \item{error}{automatically raise an error if the exit status is non-zero.}
+
+\item{pid}{integer with a process ID}
+
+\item{wait}{block until the process completes}
 }
 \value{
 \code{exec_background} returns a pid. \code{exec_wait} returns an exit code.
@@ -49,10 +56,13 @@ be sent to a connection or callback function. See the section on \emph{Output St
 below for details.
 
 The \code{exec_background} function starts the program and immediately returns the
-PID of the child process. Because this is non-blocking, \code{std_out} and \code{std_out}
-can only be \code{TRUE}/\code{FALSE} or a file path. The state of the process is not
-controlled by R but the child can be killed manually with \link[tools:pskill]{tools::pskill}. This
-is useful for running a server daemon or background process.
+PID of the child process. This is useful for running a server daemon or background
+process.
+Because this is non-blocking, \code{std_out} and \code{std_out} can only be \code{TRUE}/\code{FALSE} or
+a file path. The state of the process can be checked with \code{exec_status} which
+returns the exit status, or \code{NA} if the process is still running. If \code{wait = TRUE}
+then \code{exec_status} blocks until the process completes (but can be interrupted).
+The child can be killed with \link[tools:pskill]{tools::pskill}.
 
 The \code{exec_internal} function is a convenience wrapper around \code{exec_wait} which
 automatically captures output streams and raises an error if execution fails.
