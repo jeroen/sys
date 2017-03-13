@@ -71,6 +71,7 @@ static DWORD WINAPI PrintPipe(HANDLE pipe, FILE *stream){
         printf("ReadFile(pipe) failed (%d)\n", err);
       CloseHandle(pipe);
       ExitThread(0);
+      return(0);
     }
     fprintf(stream, "%.*s", (int) len, buffer);
   }
