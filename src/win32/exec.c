@@ -214,13 +214,15 @@ SEXP R_exec_status(SEXP rpid, SEXP wait){
   int pid = asInteger(rpid);
   HANDLE proc = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, FALSE, pid);
   bail_if(!proc, "OpenProcess()");
-  DWORD res = WAIT_TIMEOUT;
-  while(res == WAIT_TIMEOUT && !pending_interrupt()){
-    res = WaitForSingleObject(proc, 200);
+  do {
+    DWORD res = WaitForSingleObject(proc, 200);
     bail_if(res == WAIT_FAILED, "WaitForSingleObject()");
-  }
+    if(res != WAIT_TIMEOUT)
+      break;
+  } while(asLogical(wait) && !pending_interrupt());
   warn_if(GetExitCodeProcess(proc, &exit_code) == 0, "GetExitCodeProcess");
-  return ScalarInteger(exit_code);
+  CloseHandle(proc);
+  return ScalarInteger(exit_code == STILL_ACTIVE ? NA_INTEGER : exit_code);
 }
 
 SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp){
