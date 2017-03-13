@@ -81,7 +81,10 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
   int results[2];
   bail_if(pipe(results), "create pipe");
 
+  //fork the main process
   pid_t pid = fork();
+  bail_if(pid < 0, "fork()");
+
   int fail = 99;
   if(pid == 0){
     //prevents signals from being propagated to fork
