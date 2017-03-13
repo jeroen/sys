@@ -221,7 +221,8 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   CloseHandle(si.hStdError);
   CloseHandle(si.hStdOutput);
   SEXP out = PROTECT(ScalarInteger(res));
-  setAttrib(out, install("handle"), make_handle_ptr(proc));
+  if(!block)
+    setAttrib(out, install("handle"), make_handle_ptr(proc));
   UNPROTECT(1);
   return out;
 }
