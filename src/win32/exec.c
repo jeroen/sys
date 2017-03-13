@@ -120,12 +120,12 @@ BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
 }
 
 void fin_proc(SEXP ptr){
-  Rprintf("closing handle!");
   if(!R_ExternalPtrAddr(ptr)) return;
   CloseHandle(R_ExternalPtrAddr(ptr));
   R_ClearExternalPtr(ptr);
 }
 
+// Keeps one process handle open to let exec_status() read exit code
 SEXP make_handle_ptr(HANDLE proc){
   SEXP ptr = PROTECT(R_MakeExternalPtr(proc, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(ptr, fin_proc, 1);
