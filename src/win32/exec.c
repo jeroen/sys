@@ -119,6 +119,21 @@ BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
   return TRUE;
 }
 
+void fin_proc(SEXP ptr){
+  Rprintf("closing handle!");
+  if(!R_ExternalPtrAddr(ptr)) return;
+  CloseHandle(R_ExternalPtrAddr(ptr));
+  R_ClearExternalPtr(ptr);
+}
+
+SEXP make_handle_ptr(HANDLE proc){
+  SEXP ptr = PROTECT(R_MakeExternalPtr(proc, R_NilValue, R_NilValue));
+  R_RegisterCFinalizerEx(ptr, fin_proc, 1);
+  setAttrib(ptr, R_ClassSymbol, mkString("handle_ptr"));
+  UNPROTECT(1);
+  return ptr;
+}
+
 SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   int block = asLogical(wait);
   SECURITY_ATTRIBUTES sa;
@@ -193,6 +208,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     warn_if(!CloseHandle(pipe_out), "CloseHandle pipe_out");
     warn_if(!CloseHandle(pipe_err), "CloseHandle pipe_err");
     warn_if(GetExitCodeProcess(proc, &exit_code) == 0, "GetExitCodeProcess");
+    warn_if(!CloseHandle(proc), "CloseHandle proc");
     res = exit_code; //if wait=TRUE, return exit code
   } else {
     //create background threads to print stdout/stderr
@@ -201,13 +217,14 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     if(IS_TRUE(errfun))
       bail_if(!CreateThread(NULL, 0, PrintErr, pipe_err, 0, 0), "CreateThread stderr");
   }
-  CloseHandle(proc);
   CloseHandle(job);
   CloseHandle(si.hStdError);
   CloseHandle(si.hStdOutput);
-  return ScalarInteger(res);
+  SEXP out = PROTECT(ScalarInteger(res));
+  setAttrib(out, install("handle"), make_handle_ptr(proc));
+  UNPROTECT(1);
+  return out;
 }
-
 
 SEXP R_exec_status(SEXP rpid, SEXP wait){
   DWORD exit_code = NA_INTEGER;
