@@ -17,7 +17,14 @@ extern char * Sys_TempDir;
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
+#define waitms 200
 static const int R_DefaultSerializeVersion = 2;
+
+int wait_for_action1(int fd){
+  short events = POLLIN | POLLERR | POLLHUP;
+  struct pollfd ufds = {fd, events, events};
+  return poll(&ufds, 1, waitms);
+}
 
 /* Callback functions to serialize/unserialize via the pipe */
 static void OutBytesCB(R_outpstream_t stream, void * buf, int size){
@@ -118,18 +125,16 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
 
   //wait for pipe to hear from child
   close(results[1]);
-  struct pollfd ufds = {results[0], POLLIN, POLLIN};
   int status = 0;
   int killcount = 0;
   int timeoutms = REAL(timeout)[0] * 1000;
   int elapsedms = 0;
-  int waitms = 200; //check for interrupt or timeout every 200ms
   while(status < 1){
     if(pending_interrupt() || elapsedms >= timeoutms){
       warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
       killcount++;
     }
-    status = poll(&ufds, 1, waitms);
+    status = wait_for_action1(results[0]);
     elapsedms += waitms;
   }
   bail_if(status < 0, "poll() on failure pipe");

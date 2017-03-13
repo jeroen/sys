@@ -56,7 +56,7 @@ int pending_interrupt() {
   return !(R_ToplevelExec(check_interrupt_fn, NULL));
 }
 
-int wait_for_action(int fd1, int fd2){
+int wait_for_action2(int fd1, int fd2){
   int waitms = 500;
   short events = POLLIN | POLLERR | POLLHUP;
   struct pollfd ufds[2] = {
@@ -190,7 +190,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     }
     //make sure to empty the pipes, even if fun == NULL
     ssize_t len;
-    wait_for_action(pipe_out[0], pipe_err[0]);
+    wait_for_action2(pipe_out[0], pipe_err[0]);
     while ((len = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
       R_callback(outfun, buffer, len);
     while ((len = read(pipe_err[0], buffer, sizeof(buffer))) > 0)
