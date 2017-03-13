@@ -20,7 +20,7 @@ extern char * Sys_TempDir;
 #define waitms 200
 static const int R_DefaultSerializeVersion = 2;
 
-int wait_for_action1(int fd){
+static int wait_for_action1(int fd){
   short events = POLLIN | POLLERR | POLLHUP;
   struct pollfd ufds = {fd, events, events};
   return poll(&ufds, 1, waitms);

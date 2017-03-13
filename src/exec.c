@@ -13,14 +13,14 @@
 #define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
 
 /* prevent potential handlers from cleaning up exit codes */
-void block_sigchld(){
+static void block_sigchld(){
   sigset_t block_sigchld;
   sigemptyset(&block_sigchld);
   sigaddset(&block_sigchld, SIGCHLD);
   sigprocmask(SIG_BLOCK, &block_sigchld, NULL);
 }
 
-void resume_sigchild(){
+static void resume_sigchild(){
   sigset_t block_sigchld;
   sigemptyset(&block_sigchld);
   sigaddset(&block_sigchld, SIGCHLD);
@@ -38,7 +38,7 @@ void warn_if(int err, const char * what){
     Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, strerror(errno));
 }
 
-void check_child_success(int fd, const char * cmd){
+static void check_child_success(int fd, const char * cmd){
   int child_errno;
   int n = read(fd, &child_errno, sizeof(child_errno));
   close(fd);
@@ -56,7 +56,7 @@ int pending_interrupt() {
   return !(R_ToplevelExec(check_interrupt_fn, NULL));
 }
 
-int wait_for_action2(int fd1, int fd2){
+static int wait_for_action2(int fd1, int fd2){
   int waitms = 500;
   short events = POLLIN | POLLERR | POLLHUP;
   struct pollfd ufds[2] = {
@@ -66,7 +66,7 @@ int wait_for_action2(int fd1, int fd2){
   return poll(ufds, 2, waitms);
 }
 
-void R_callback(SEXP fun, const char * buf, ssize_t len){
+static void R_callback(SEXP fun, const char * buf, ssize_t len){
   if(!isFunction(fun)) return;
   int ok;
   SEXP str = PROTECT(allocVector(RAWSXP, len));
