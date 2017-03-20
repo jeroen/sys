@@ -5,7 +5,7 @@
 \title{Evaluate in fork}
 \usage{
 eval_fork(expr, envir = parent.frame(), tmp = tempfile("fork"),
-  timeout = 60)
+  timeout = 60, silent = FALSE)
 }
 \arguments{
 \item{expr}{expression to evaluate}
@@ -15,6 +15,8 @@ eval_fork(expr, envir = parent.frame(), tmp = tempfile("fork"),
 \item{tmp}{the value of \link{tempdir} inside the forked process}
 
 \item{timeout}{maximum time in seconds to allow for call to return}
+
+\item{silent}{suppress stdout in fork}
 }
 \description{
 Version of \link{eval} which evaluates expression in a temporary fork so

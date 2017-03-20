@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <fcntl.h>
 #include <poll.h>
 #include <sys/wait.h>
 
@@ -84,7 +85,7 @@ static SEXP unserialize_from_pipe(int results[2]){
   return R_Unserialize(&stream);
 }
 
-SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
+SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP silent){
   int results[2];
   bail_if(pipe(results), "create pipe");
 
@@ -105,6 +106,13 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout){
     Sys_TempDir = R_TempDir;
     #endif
 #endif
+
+    //close stdout
+    if(asLogical(silent)){
+      int fdnull = open("/dev/null", O_WRONLY);
+      dup2(fdnull, STDOUT_FILENO);
+      close(fdnull);
+    }
 
     //close read pipe
     close(results[0]);

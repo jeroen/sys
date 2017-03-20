@@ -10,7 +10,8 @@
 #' @param envir the [environment] in which expr is to be evaluated
 #' @param tmp the value of [tempdir] inside the forked process
 #' @param timeout maximum time in seconds to allow for call to return
-eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), timeout = 60){
+#' @param silent suppress stdout in fork
+eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), timeout = 60, silent = FALSE){
   if(!file.exists(tmp))
     dir.create(tmp)
   clenv <- force(envir)
@@ -22,7 +23,7 @@ eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
       structure(e, class = "eval_fork_error")
     }
   )
- out <- eval_fork_internal(trexpr, clenv, tmp, timeout)
+ out <- eval_fork_internal(trexpr, clenv, tmp, timeout, silent)
  if(inherits(out, "eval_fork_error")){
    stop(simpleError(out$message, out$call[[2]]))
  }
@@ -30,6 +31,6 @@ eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
 }
 
 #' @useDynLib sys R_eval_fork
-eval_fork_internal <- function(expr, envir, tmp, timeout){
-  .Call(R_eval_fork, expr, envir, tmp, timeout)
+eval_fork_internal <- function(expr, envir, tmp, timeout, silent){
+  .Call(R_eval_fork, expr, envir, tmp, timeout, silent)
 }
