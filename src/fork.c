@@ -28,14 +28,15 @@ static int wait_for_action1(int fd){
 }
 
 /* Callback functions to serialize/unserialize via the pipe */
-static void OutBytesCB(R_outpstream_t stream, void * buf, int size){
+static void OutBytesCB(R_outpstream_t stream, void * raw, int size){
   int * results = stream->data;
+  char * buf = raw;
   ssize_t remaining = size;
   while(remaining > 0){
     ssize_t written = write(results[1], buf, remaining);
     bail_if(written < 0, "write to pipe");
     remaining -= written;
-    buf+= written;
+    buf += written;
   }
 }
 
@@ -158,7 +159,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP silent){
   close(results[0]);
   kill(-pid, SIGKILL); //kills entire process group
 
-  //wait for child to die, otherwise it turns into zombie
+  //collect exit code which cleans up the zombie process
   waitpid(pid, NULL, 0);
 
   //check for process error
