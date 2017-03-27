@@ -27,6 +27,12 @@ static void resume_sigchild(){
   sigprocmask(SIG_UNBLOCK, &block_sigchld, NULL);
 }
 
+void safe_close(int fd){
+  int fdnull = open("/dev/null", O_WRONLY);
+  dup2(fdnull, fd);
+  close(fdnull);
+}
+
 /* check for system errors */
 void bail_if(int err, const char * what){
   if(err)
@@ -118,7 +124,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
         bail_if(dup2(fd, STDOUT_FILENO) < 0, "dup2() stdout");
         close(fd);
       } else if(!IS_TRUE(outfun)){
-        close(STDOUT_FILENO);
+        safe_close(STDOUT_FILENO);
       }
       if(IS_STRING(errfun)){
         const char * file = CHAR(STRING_ELT(errfun, 0));
@@ -126,7 +132,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
         bail_if(dup2(fd, STDERR_FILENO) < 0, "dup2() stderr");
         close(fd);
       } else if(!IS_TRUE(errfun)){
-        close(STDERR_FILENO);
+        safe_close(STDERR_FILENO);
       }
     }
 
