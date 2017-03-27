@@ -38,6 +38,12 @@ void warn_if(int err, const char * what){
     Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, strerror(errno));
 }
 
+void set_pipe(int input, int output[2]){
+  bail_if(dup2(output[1], input) < 0, "dup2() stdout/stderr");
+  close(output[0]);
+  close(output[1]);
+}
+
 void set_output(int fd, const char * file){
   int out = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
   warn_if(dup2(out, fd) < 0, "dup2() output");
@@ -114,15 +120,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
       //undo blocking in child (is this needed at all?)
       resume_sigchild();
 
-      // send stdout to the pipe
-      bail_if(dup2(pipe_out[1], STDOUT_FILENO) < 0, "dup2() stdout");
-      close(pipe_out[0]);
-      close(pipe_out[1]);
-
-      //send stderr to the pipe
-      bail_if(dup2(pipe_err[1], STDERR_FILENO) < 0, "dup2() stderr");
-      close(pipe_err[0]);
-      close(pipe_err[1]);
+      // send stdout/stderr to pipes
+      set_pipe(STDOUT_FILENO, pipe_out);
+      set_pipe(STDERR_FILENO, pipe_err);
     } else {
       //redirect stdout in background process
       if(IS_STRING(outfun)){
