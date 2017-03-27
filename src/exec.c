@@ -44,6 +44,11 @@ void set_pipe(int input, int output[2]){
   close(output[1]);
 }
 
+void pipe_set_read(int pipe[2]){
+  close(pipe[1]);
+  fcntl(pipe[0], F_SETFL, O_NONBLOCK);
+}
+
 void set_output(int fd, const char * file){
   int out = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
   warn_if(dup2(out, fd) < 0, "dup2() output");
@@ -186,12 +191,8 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   }
 
   //blocking: close write end of IO pipes
-  close(pipe_out[1]);
-  close(pipe_err[1]);
-
-  //use async IO
-  fcntl(pipe_out[0], F_SETFL, O_NONBLOCK);
-  fcntl(pipe_err[0], F_SETFL, O_NONBLOCK);
+  pipe_set_read(pipe_out);
+  pipe_set_read(pipe_err);
 
   //status -1 means error, 0 means running
   int status = 0;
