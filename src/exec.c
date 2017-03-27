@@ -46,7 +46,7 @@ void set_pipe(int input, int output[2]){
 
 void pipe_set_read(int pipe[2]){
   close(pipe[1]);
-  fcntl(pipe[0], F_SETFL, O_NONBLOCK);
+  bail_if(fcntl(pipe[0], F_SETFL, O_NONBLOCK) < 0, "fcntl() in pipe_set_read");
 }
 
 void set_output(int fd, const char * file){
