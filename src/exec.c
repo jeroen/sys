@@ -94,6 +94,13 @@ static void R_callback(SEXP fun, const char * buf, ssize_t len){
   UNPROTECT(2);
 }
 
+void print_output(int pipe_out[2], SEXP fun){
+  static ssize_t len;
+  static char buffer[65336];
+  while ((len = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
+    R_callback(fun, buffer, len);
+}
+
 SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   //split process
   int block = asLogical(wait);
@@ -189,7 +196,6 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   //status -1 means error, 0 means running
   int status = 0;
   int killcount = 0;
-  char buffer[65336];
   while (waitpid(pid, &status, WNOHANG) >= 0){
     if(pending_interrupt()){
       //pass interrupt to child. On second try we SIGKILL.
@@ -197,12 +203,11 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
       killcount++;
     }
     //make sure to empty the pipes, even if fun == NULL
-    ssize_t len;
     wait_for_action2(pipe_out[0], pipe_err[0]);
-    while ((len = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
-      R_callback(outfun, buffer, len);
-    while ((len = read(pipe_err[0], buffer, sizeof(buffer))) > 0)
-      R_callback(errfun, buffer, len);
+
+    //print stdout/stderr buffers
+    print_output(pipe_out, outfun);
+    print_output(pipe_err, errfun);
   }
   warn_if(close(pipe_out[0]), "close stdout");
   warn_if(close(pipe_err[0]), "close stderr");
