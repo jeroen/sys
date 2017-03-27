@@ -27,12 +27,6 @@ static void resume_sigchild(){
   sigprocmask(SIG_UNBLOCK, &block_sigchld, NULL);
 }
 
-void safe_close(int fd){
-  int fdnull = open("/dev/null", O_WRONLY);
-  dup2(fdnull, fd);
-  close(fdnull);
-}
-
 /* check for system errors */
 void bail_if(int err, const char * what){
   if(err)
@@ -42,6 +36,18 @@ void bail_if(int err, const char * what){
 void warn_if(int err, const char * what){
   if(err)
     Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, strerror(errno));
+}
+
+void set_output(int fd, const char * file){
+  int out = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+  warn_if(dup2(out, fd) < 0, "dup2() output");
+  close(out);
+}
+
+void safe_close(int fd){
+  int fdnull = open("/dev/null", O_WRONLY);
+  dup2(fdnull, fd);
+  close(fdnull);
 }
 
 static void check_child_success(int fd, const char * cmd){
@@ -118,19 +124,15 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
       close(pipe_err[0]);
       close(pipe_err[1]);
     } else {
+      //redirect stdout in background process
       if(IS_STRING(outfun)){
-        const char * file = CHAR(STRING_ELT(outfun, 0));
-        int fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-        bail_if(dup2(fd, STDOUT_FILENO) < 0, "dup2() stdout");
-        close(fd);
+        set_output(STDOUT_FILENO, CHAR(STRING_ELT(outfun, 0)));
       } else if(!IS_TRUE(outfun)){
         safe_close(STDOUT_FILENO);
       }
+      //redirect stderr in background process
       if(IS_STRING(errfun)){
-        const char * file = CHAR(STRING_ELT(errfun, 0));
-        int fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-        bail_if(dup2(fd, STDERR_FILENO) < 0, "dup2() stderr");
-        close(fd);
+        set_output(STDERR_FILENO, CHAR(STRING_ELT(errfun, 0)));
       } else if(!IS_TRUE(errfun)){
         safe_close(STDERR_FILENO);
       }
