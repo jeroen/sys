@@ -72,6 +72,17 @@ static void serialize_to_pipe(SEXP object, int results[2]){
   R_Serialize(object, &stream);
 }
 
+void prepare_fork(const char * tmpdir){
+#ifndef R_SYS_BUILD_CLEAN
+  R_isForkedChild = 1;
+  R_Interactive = 0;
+  R_TempDir = strdup(tmpdir);
+#ifndef HAVE_VISIBILITY_ATTRIBUTE
+  Sys_TempDir = R_TempDir;
+#endif
+#endif
+}
+
 static SEXP unserialize_from_pipe(int results[2]){
   //unserialize stream
   struct R_inpstream_st stream;
@@ -99,14 +110,8 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP silent){
     //prevents signals from being propagated to fork
     setpgid(0, 0);
 
-#ifndef R_SYS_BUILD_CLEAN
-    R_isForkedChild = 1;
-    R_Interactive = 0;
-    R_TempDir = strdup(CHAR(STRING_ELT(subtmp, 0)));
-    #ifndef HAVE_VISIBILITY_ATTRIBUTE
-    Sys_TempDir = R_TempDir;
-    #endif
-#endif
+    //this is the hacky stuff
+    prepare_fork(CHAR(STRING_ELT(subtmp, 0)));
 
     //close stdout
     if(asLogical(silent)){
