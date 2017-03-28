@@ -161,8 +161,8 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   }
 
   //start timer
-  struct timespec start, end;
-  clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+  struct timeval start, end;
+  gettimeofday(&start, NULL);
 
   //start listening to child
   close(results[w]);
@@ -188,8 +188,8 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     print_output(pipe_out, outfun);
     print_output(pipe_err, errfun);
 
-    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
-    elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    gettimeofday(&end, NULL);
+    elapsed = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
     is_timeout = elapsed > totaltime;
   }
   warn_if(close(pipe_out[r]), "close stdout");
