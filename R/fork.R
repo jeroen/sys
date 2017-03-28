@@ -65,11 +65,18 @@ eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
     dir.create(tmp)
   clenv <- force(envir)
   clexpr <- substitute(expr)
- out <- eval_fork_internal(clexpr, clenv, tmp, timeout, outfun, errfun)
- if(inherits(out, "eval_fork_error")){
-   stop(simpleError(out$message, out$call[[2]]))
- }
- return(out)
+  trexpr <- call('tryCatch', call('{',
+    substitute(options(device = grDevices::pdf)),
+    substitute(options(menu.graphics=FALSE)),
+    clexpr
+  ), error = function(e){
+    structure(e, class = "eval_fork_error")
+  })
+  out <- eval_fork_internal(trexpr, clenv, tmp, timeout, outfun, errfun)
+  if(inherits(out, "eval_fork_error")){
+    stop(simpleError(out$message, out$call))
+  }
+  return(out)
 }
 
 #' @useDynLib sys R_eval_fork
