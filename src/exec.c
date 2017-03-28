@@ -10,6 +10,7 @@
 
 #define r 0
 #define w 1
+#define waitms 500
 #define IS_STRING(x) (Rf_isString(x) && Rf_length(x))
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
 #define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
@@ -81,8 +82,7 @@ int pending_interrupt() {
   return !(R_ToplevelExec(check_interrupt_fn, NULL));
 }
 
-static int wait_for_action2(int fd1, int fd2){
-  int waitms = 500;
+int wait_for_action2(int fd1, int fd2){
   short events = POLLIN | POLLERR | POLLHUP;
   struct pollfd ufds[2] = {
     {fd1, events, events},

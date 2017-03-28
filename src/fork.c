@@ -1,4 +1,4 @@
-#include <Rinternals.h>
+#define R_INTERFACE_PTRS
 #include <Rinterface.h>
 #include <Rembedded.h>
 #include <Rconfig.h>
@@ -9,11 +9,25 @@
 #include <poll.h>
 #include <sys/wait.h>
 
+static int out = STDOUT_FILENO;
+static int err = STDERR_FILENO;
+
+#define r 0
+#define w 1
 extern Rboolean R_isForkedChild;
 extern void warn_if(int err, const char * what);
 extern void bail_if(int err, const char * what);
+extern void set_pipe(int input, int output[2]);
+extern int wait_for_action2(int fd1, int fd2);
+extern void pipe_set_read(int pipe[2]);
+extern void print_output(int pipe_out[2], SEXP fun);
 extern int pending_interrupt();
 extern char * Sys_TempDir;
+
+//output callbacks
+void write_out_ex(const char * buf, int size, int otype){
+  write(otype ? err : out, buf, size);
+}
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -21,10 +35,10 @@ extern char * Sys_TempDir;
 #define waitms 200
 static const int R_DefaultSerializeVersion = 2;
 
-static int wait_for_action1(int fd){
+static int wait_for_action1(int fd, int ms){
   short events = POLLIN | POLLERR | POLLHUP;
   struct pollfd ufds = {fd, events, events};
-  return poll(&ufds, 1, waitms);
+  return poll(&ufds, 1, ms);
 }
 
 /* Callback functions to serialize/unserialize via the pipe */
@@ -33,7 +47,7 @@ static void OutBytesCB(R_outpstream_t stream, void * raw, int size){
   char * buf = raw;
   ssize_t remaining = size;
   while(remaining > 0){
-    ssize_t written = write(results[1], buf, remaining);
+    ssize_t written = write(results[w], buf, remaining);
     bail_if(written < 0, "write to pipe");
     remaining -= written;
     buf += written;
@@ -43,7 +57,7 @@ static void OutBytesCB(R_outpstream_t stream, void * raw, int size){
 static void InBytesCB(R_inpstream_t stream, void *buf, int length){
   R_CheckUserInterrupt();
   int * results = stream->data;
-  bail_if(read(results[0], buf, length) < 0, "read from pipe");
+  bail_if(read(results[r], buf, length) < 0, "read from pipe");
 }
 
 /* Not sure if these are ever needed */
@@ -74,6 +88,8 @@ static void serialize_to_pipe(SEXP object, int results[2]){
 
 void prepare_fork(const char * tmpdir){
 #ifndef R_SYS_BUILD_CLEAN
+  ptr_R_WriteConsole = NULL;
+  ptr_R_WriteConsoleEx = write_out_ex;
   R_isForkedChild = 1;
   R_Interactive = 0;
   R_TempDir = strdup(tmpdir);
@@ -97,9 +113,12 @@ static SEXP unserialize_from_pipe(int results[2]){
   return R_Unserialize(&stream);
 }
 
-SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP silent){
+SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SEXP errfun){
   int results[2];
-  bail_if(pipe(results), "create pipe");
+  int pipe_out[2];
+  int pipe_err[2];
+  bail_if(pipe(results), "create results pipe");
+  bail_if(pipe(pipe_out) || pipe(pipe_err), "create output pipes");
 
   //fork the main process
   pid_t pid = fork();
@@ -111,57 +130,69 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP silent){
     setpgid(0, 0);
 
     //this is the hacky stuff
+    out = pipe_out[w];
+    err = pipe_err[w];
     prepare_fork(CHAR(STRING_ELT(subtmp, 0)));
 
-    //close stdout
-    if(asLogical(silent)){
-      int fdnull = open("/dev/null", O_WRONLY);
-      dup2(fdnull, STDOUT_FILENO);
-      close(fdnull);
-    }
+    //this is only for output from subprocs
+    //set_pipe(STDOUT_FILENO, pipe_out);
+    //set_pipe(STDERR_FILENO, pipe_err);
 
     //close read pipe
-    close(results[0]);
+    close(results[r]);
+    close(STDIN_FILENO);
 
     //execute
     SEXP object = R_tryEval(call, env, &fail);
 
     //try to send the 'success byte' and then output
-    if(write(results[1], &fail, sizeof(fail)) > 0){
+    if(write(results[w], &fail, sizeof(fail)) > 0){
       const char * errbuf = R_curErrorBuf();
       serialize_to_pipe(fail || object == NULL ? mkString(errbuf ? errbuf : "unknown error in child") : object, results);
     }
 
     //suicide
-    close(results[1]);
+    close(results[w]);
+    close(pipe_out[w]);
+    close(pipe_err[w]);
     raise(SIGKILL);
   }
 
-  //wait for pipe to hear from child
-  close(results[1]);
+  //start listening to child
+  close(results[w]);
+  pipe_set_read(pipe_out);
+  pipe_set_read(pipe_err);
   int status = 0;
   int killcount = 0;
   int timeoutms = REAL(timeout)[0] * 1000;
   int elapsedms = 0;
   while(status < 1){
+    //wait for pipe to hear from child
     if(pending_interrupt() || elapsedms >= timeoutms){
       warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
       killcount++;
     }
-    status = wait_for_action1(results[0]);
+    wait_for_action2(pipe_out[r], pipe_err[r]);
+
+    //don't wait, already avoid busy loop above
+    status = wait_for_action1(results[r], 0);
+    print_output(pipe_out, outfun);
+    print_output(pipe_err, errfun);
     elapsedms += waitms;
   }
+  warn_if(close(pipe_out[r]), "close stdout");
+  warn_if(close(pipe_err[r]), "close stderr");
   bail_if(status < 0, "poll() on failure pipe");
 
   //read the 'success byte'
-  int bytes = read(results[0], &fail, sizeof(fail));
+  int bytes = read(results[r], &fail, sizeof(fail));
   bail_if(bytes < 0, "read pipe");
 
   //still alive: reading data
   SEXP res = (bytes > 0) ? unserialize_from_pipe(results) : R_NilValue;
 
   //cleanup
-  close(results[0]);
+  close(results[r]);
   kill(-pid, SIGKILL); //kills entire process group
 
   //collect exit code which cleans up the zombie process
