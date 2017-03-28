@@ -7,6 +7,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 
 static int out = STDOUT_FILENO;
@@ -158,27 +159,37 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     raise(SIGKILL);
   }
 
+  //start timer
+  struct timespec start, end;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+
   //start listening to child
   close(results[w]);
   pipe_set_read(pipe_out);
   pipe_set_read(pipe_err);
   int status = 0;
   int killcount = 0;
-  int timeoutms = REAL(timeout)[0] * 1000;
-  int elapsedms = 0;
+  double elapsed = 0;
+  int is_timeout = 0;
+  double totaltime = REAL(timeout)[0];
   while(status < 1){
     //wait for pipe to hear from child
-    if(pending_interrupt() || elapsedms >= timeoutms){
+    if(is_timeout || pending_interrupt()){
       warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
+      status = wait_for_action1(results[r], 1000);
       killcount++;
+    } else {
+      wait_for_action2(pipe_out[r], pipe_err[r]);
+      status = wait_for_action1(results[r], 0);
     }
-    wait_for_action2(pipe_out[r], pipe_err[r]);
 
-    //don't wait, already avoid busy loop above
-    status = wait_for_action1(results[r], 0);
+    //empty pipes
     print_output(pipe_out, outfun);
     print_output(pipe_err, errfun);
-    elapsedms += waitms;
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    is_timeout = elapsed > totaltime;
   }
   warn_if(close(pipe_out[r]), "close stdout");
   warn_if(close(pipe_err[r]), "close stderr");
@@ -199,22 +210,16 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   waitpid(pid, NULL, 0);
 
   //check for process error
-  if(bytes == 0)
-    Rf_errorcall(call, killcount ? "process died after interrupt" : "child process died");
-
-  //Check for failures. Rarely happens, R errors should get caucht by tryCatch.
-  if(fail){
-    if(killcount && elapsedms >= timeoutms)
-      Rf_errorcall(call, "timeout reached (%d ms)", timeoutms);
+  if(bytes == 0 || fail){
+    if(killcount && is_timeout)
+      Rf_errorcall(call, "timeout reached (%f sec)", totaltime);
     if(killcount)
       Rf_errorcall(call, "process interrupted by parent");
     if(isString(res) && Rf_length(res) && Rf_length(STRING_ELT(res, 0)) > 8)
       Rf_errorcall(call, CHAR(STRING_ELT(res, 0)) + 7);
-    Rf_errorcall(call, "unknown error");
+    Rf_errorcall(call, "child process died");
   }
 
   //add timeout attribute
-  if(inherits(res, "eval_fork_error") && killcount && elapsedms >= timeoutms)
-    SET_VECTOR_ELT(res, 0, mkString("timeout reached"));
   return res;
 }
