@@ -7,6 +7,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <time.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 
