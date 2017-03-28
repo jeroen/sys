@@ -8,6 +8,8 @@
 #include <errno.h>
 #include <poll.h>
 
+#define r 0
+#define w 1
 #define IS_STRING(x) (Rf_isString(x) && Rf_length(x))
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
 #define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
@@ -39,14 +41,14 @@ void warn_if(int err, const char * what){
 }
 
 void set_pipe(int input, int output[2]){
-  bail_if(dup2(output[1], input) < 0, "dup2() stdout/stderr");
-  close(output[0]);
-  close(output[1]);
+  bail_if(dup2(output[w], input) < 0, "dup2() stdout/stderr");
+  close(output[r]);
+  close(output[w]);
 }
 
 void pipe_set_read(int pipe[2]){
-  close(pipe[1]);
-  bail_if(fcntl(pipe[0], F_SETFL, O_NONBLOCK) < 0, "fcntl() in pipe_set_read");
+  close(pipe[w]);
+  bail_if(fcntl(pipe[r], F_SETFL, O_NONBLOCK) < 0, "fcntl() in pipe_set_read");
 }
 
 void set_output(int fd, const char * file){
@@ -102,7 +104,7 @@ static void R_callback(SEXP fun, const char * buf, ssize_t len){
 void print_output(int pipe_out[2], SEXP fun){
   static ssize_t len;
   static char buffer[65336];
-  while ((len = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
+  while ((len = read(pipe_out[r], buffer, sizeof(buffer))) > 0)
     R_callback(fun, buffer, len);
 }
 
@@ -158,7 +160,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
     //close all file descriptors before exit, otherwise they can segfault
     for (int i = 3; i < sysconf(_SC_OPEN_MAX); i++) {
-      if(i != failure[1])
+      if(i != failure[w])
         close(i);
     }
 
@@ -171,12 +173,12 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     }
 
     //execvp never returns if successful
-    fcntl(failure[1], F_SETFD, FD_CLOEXEC);
+    fcntl(failure[w], F_SETFD, FD_CLOEXEC);
     execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
 
     //execvp failed! Send errno to parent
-    warn_if(write(failure[1], &errno, sizeof(errno)) < 0, "write to failure pipe");
-    close(failure[1]);
+    warn_if(write(failure[w], &errno, sizeof(errno)) < 0, "write to failure pipe");
+    close(failure[w]);
 
     //exit() not allowed by CRAN. raise() should suffice
     //exit(EXIT_FAILURE);
@@ -184,9 +186,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   }
 
   //PARENT PROCESS:
-  close(failure[1]);
+  close(failure[w]);
   if (!block){
-    check_child_success(failure[0], CHAR(STRING_ELT(command, 0)));
+    check_child_success(failure[r], CHAR(STRING_ELT(command, 0)));
     return ScalarInteger(pid);
   }
 
@@ -204,18 +206,18 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
       killcount++;
     }
     //make sure to empty the pipes, even if fun == NULL
-    wait_for_action2(pipe_out[0], pipe_err[0]);
+    wait_for_action2(pipe_out[r], pipe_err[r]);
 
     //print stdout/stderr buffers
     print_output(pipe_out, outfun);
     print_output(pipe_err, errfun);
   }
-  warn_if(close(pipe_out[0]), "close stdout");
-  warn_if(close(pipe_err[0]), "close stderr");
+  warn_if(close(pipe_out[r]), "close stdout");
+  warn_if(close(pipe_err[r]), "close stderr");
 
   // check for execvp() error *after* closing pipes and zombie
   resume_sigchild();
-  check_child_success(failure[0], CHAR(STRING_ELT(command, 0)));
+  check_child_success(failure[r], CHAR(STRING_ELT(command, 0)));
 
   if(WIFEXITED(status)){
     return ScalarInteger(WEXITSTATUS(status));
