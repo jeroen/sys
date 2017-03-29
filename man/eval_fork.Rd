@@ -2,10 +2,14 @@
 % Please edit documentation in R/fork.R
 \name{eval_fork}
 \alias{eval_fork}
+\alias{eval_safe}
 \title{Evaluate in fork}
 \usage{
 eval_fork(expr, envir = parent.frame(), tmp = tempfile("fork"),
   timeout = 60, std_out = stdout(), std_err = stderr())
+
+eval_safe(expr, envir = parent.frame(), tmp = tempfile("fork"),
+  timeout = 60, std_out = stdout(), std_err = stderr(), device = pdf)
 }
 \arguments{
 \item{expr}{expression to evaluate}
@@ -23,10 +27,12 @@ on \emph{Output Streams} below for details.}
 \item{std_err}{if and where to direct child process \code{STDERR}. Must be one of
 \code{TRUE}, \code{FALSE}, filename, connection object or callback function. See section
 on \emph{Output Streams} below for details.}
+
+\item{device}{graphics device to use in the fork, see \link{options}}
 }
 \description{
-Version of \link{eval} which evaluates expression in a temporary fork so
-that it has no side effects on the main R session.
-Basically a robust version of \code{mccollect(mcparallel(expr))}.
-Not available on Windows because it required \code{fork()}.
+Version of \link{eval} which evaluates expression in a temporary fork so that it has no side
+effects on the main R session, similar to \code{mccollect(mcparallel(expr))}. In \link{eval_safe}
+the expression is wrapped in additional R code to catch errors, close graphics devices,
+etc. Not available on Windows because it requires \code{fork()}.
 }

@@ -1,11 +1,12 @@
 #' Evaluate in fork
 #'
-#' Version of [eval] which evaluates expression in a temporary fork so
-#' that it has no side effects on the main R session.
-#' Basically a robust version of `mccollect(mcparallel(expr))`.
-#' Not available on Windows because it required `fork()`.
+#' Version of [eval] which evaluates expression in a temporary fork so that it has no side
+#' effects on the main R session, similar to `mccollect(mcparallel(expr))`. In [eval_safe]
+#' the expression is wrapped in additional R code to catch errors, close graphics devices,
+#' etc. Not available on Windows because it requires `fork()`.
 #'
 #' @export
+#' @rdname eval_fork
 #' @inheritParams exec
 #' @param expr expression to evaluate
 #' @param envir the [environment] in which expr is to be evaluated
@@ -65,14 +66,28 @@ eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
     dir.create(tmp)
   clenv <- force(envir)
   clexpr <- substitute(expr)
-  trexpr <- call('tryCatch', call('{',
-    substitute(options(device = grDevices::pdf)),
-    substitute(options(menu.graphics=FALSE)),
-    clexpr
+  eval_fork_internal(clexpr, clenv, tmp, timeout, outfun, errfun)
+}
+
+#' @rdname eval_fork
+#' @export
+#' @importFrom grDevices pdf
+#' @param device graphics device to use in the fork, see [options]
+eval_safe <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), timeout = 60,
+                      std_out = stdout(), std_err = stderr(), device = pdf){
+  orig_expr <- substitute(expr)
+  safe_expr <- call('tryCatch', call('{',
+    call('options', device = substitute(device)),
+    substitute(while(dev.cur() > 1) dev.off()),
+    substitute(options(menu.graphics = FALSE)),
+    substitute(FORK_EXPR_RESULT <- orig_expr),
+    substitute(while(dev.cur() > 1) dev.off()),
+    substitute(FORK_EXPR_RESULT)
   ), error = function(e){
     structure(e, class = "eval_fork_error")
   })
-  out <- eval_fork_internal(trexpr, clenv, tmp, timeout, outfun, errfun)
+  out <- eval(call('eval_fork', expr = safe_expr, envir = envir, tmp = tmp,
+                   timeout = timeout, std_out = std_out, std_err = std_err))
   if(inherits(out, "eval_fork_error")){
     stop(simpleError(out$message, out$call))
   }
