@@ -91,7 +91,10 @@ eval_safe <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
   if(inherits(out, "eval_fork_error")){
     stop(simpleError(out$message, out$call))
   }
-  ifelse(out$visible, out, invisible(out))
+  if(out$visible)
+    out$value
+  else
+    invisible(out$value)
 }
 
 #' @useDynLib sys R_eval_fork
