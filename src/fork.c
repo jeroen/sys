@@ -43,6 +43,12 @@ static int wait_for_action1(int fd, int ms){
   return poll(&ufds, 1, ms);
 }
 
+static int is_alive(pid_t pid){
+  siginfo_t infop = {0};
+  bail_if(waitid(P_PID, pid, &infop, WEXITED | WSTOPPED | WNOHANG | WNOWAIT) < 0, "waitid after kill");
+  return !infop.si_pid;
+}
+
 /* Callback functions to serialize/unserialize via the pipe */
 static void OutBytesCB(R_outpstream_t stream, void * raw, int size){
   int * results = stream->data;
@@ -173,11 +179,11 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   double elapsed = 0;
   int is_timeout = 0;
   double totaltime = REAL(timeout)[0];
-  while(status < 1){
+  while(status == 0 && is_alive(pid)){
     //wait for pipe to hear from child
     if(is_timeout || pending_interrupt()){
-      warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
-      status = wait_for_action1(results[r], 1000);
+      warn_if(kill(pid, killcount ? SIGKILL : SIGKILL), "kill child");
+      status = wait_for_action1(results[r], 500);
       killcount++;
     } else {
       wait_for_action2(pipe_out[r], pipe_err[r]);
@@ -196,7 +202,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   bail_if(status < 0, "poll() on failure pipe");
 
   //read the 'success byte'
-  int bytes = read(results[r], &fail, sizeof(fail));
+  int bytes = is_alive(pid) ? read(results[r], &fail, sizeof(fail)) : 0;
   bail_if(bytes < 0, "read pipe");
 
   //still alive: reading data
@@ -205,9 +211,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   //cleanup
   close(results[r]);
   kill(-pid, SIGKILL); //kills entire process group
-
-  //collect exit code which cleans up the zombie process
-  waitpid(pid, NULL, 0);
+  waitid(P_PGID, pid, NULL, WEXITED | WSTOPPED | WNOHANG);
 
   //check for process error
   if(bytes == 0 || fail){
