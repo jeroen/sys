@@ -21,8 +21,8 @@ test_that("eval_fork gives errors", {
   skip_on_os("windows")
 
   # Test regular errors
-  expect_error(eval_fork(stop("uhoh")), "uhoh")
-  expect_error(eval_fork(blablabla()), "could not find function")
+  expect_error(eval_safe(stop("uhoh")), "uhoh")
+  expect_error(eval_safe(blablabla()), "could not find function")
 
   # Test that proc dies properly
   expect_error(eval_fork(tools::pskill(Sys.getpid())), "child process died")
