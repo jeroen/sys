@@ -211,7 +211,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   //cleanup
   close(results[r]);
   kill(-pid, SIGKILL); //kills entire process group
-  waitid(P_PGID, pid, NULL, WEXITED | WSTOPPED | WNOHANG);
+  waitpid(pid, NULL, 0);
 
   //check for process error
   if(bytes == 0 || fail){
