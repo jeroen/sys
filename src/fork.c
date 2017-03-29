@@ -28,7 +28,7 @@ extern char * Sys_TempDir;
 
 //output callbacks
 void write_out_ex(const char * buf, int size, int otype){
-  write(otype ? err : out, buf, size);
+  warn_if(write(otype ? err : out, buf, size), "problem writing back to std_out / std_err");
 }
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
