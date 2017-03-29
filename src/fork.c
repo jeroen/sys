@@ -182,15 +182,14 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     } else {
       wait_for_action2(pipe_out[r], pipe_err[r]);
       status = wait_for_action1(results[r], 0);
+
+      //empty pipes
+      print_output(pipe_out, outfun);
+      print_output(pipe_err, errfun);
+      gettimeofday(&end, NULL);
+      elapsed = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
+      is_timeout = elapsed > totaltime;
     }
-
-    //empty pipes
-    print_output(pipe_out, outfun);
-    print_output(pipe_err, errfun);
-
-    gettimeofday(&end, NULL);
-    elapsed = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
-    is_timeout = elapsed > totaltime;
   }
   warn_if(close(pipe_out[r]), "close stdout");
   warn_if(close(pipe_err[r]), "close stderr");
