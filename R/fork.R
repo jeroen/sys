@@ -80,7 +80,7 @@ eval_safe <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
     call('options', device = substitute(device)),
     substitute(while(dev.cur() > 1) dev.off()),
     substitute(options(menu.graphics = FALSE)),
-    substitute(FORK_EXPR_RESULT <- orig_expr),
+    substitute(FORK_EXPR_RESULT <- withVisible(orig_expr)),
     substitute(while(dev.cur() > 1) dev.off()),
     substitute(FORK_EXPR_RESULT)
   ), error = function(e){
@@ -91,7 +91,7 @@ eval_safe <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
   if(inherits(out, "eval_fork_error")){
     stop(simpleError(out$message, out$call))
   }
-  return(out)
+  ifelse(out$visible, out, invisible(out))
 }
 
 #' @useDynLib sys R_eval_fork
