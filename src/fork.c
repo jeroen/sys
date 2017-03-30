@@ -39,8 +39,10 @@ static const int R_DefaultSerializeVersion = 2;
 
 static int wait_for_action1(int fd, int ms){
   short events = POLLIN | POLLERR | POLLHUP;
-  struct pollfd ufds = {fd, events, events};
-  return poll(&ufds, 1, ms);
+  struct pollfd ufds = {fd, events, 0};
+  if(poll(&ufds, 1, ms) > 0)
+    return ufds.revents;
+  return 0;
 }
 
 static int is_alive(pid_t pid){
@@ -202,7 +204,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   bail_if(status < 0, "poll() on failure pipe");
 
   //read the 'success byte'
-  int bytes = read(results[r], &fail, sizeof(fail));
+  int bytes = status ? read(results[r], &fail, sizeof(fail)) : 0;
   bail_if(bytes < 0, "read pipe");
 
   //still alive: reading data
