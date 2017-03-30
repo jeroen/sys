@@ -185,6 +185,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   while(status == 0 && is_alive(pid)){
     //wait for pipe to hear from child
     if(is_timeout || pending_interrupt()){
+      //looks like rstudio always does SIGKILL, regardless
       warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
       status = wait_for_action1(results[r], 500);
       killcount++;
@@ -219,12 +220,8 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   kill(-pid, SIGKILL); //kills entire process group
   waitpid(pid, NULL, 0); //wait for zombie(s) to die
 
-  //results pipe was unresponsive
-  if(status == 0)
-    Rf_errorcall(call, "child process has died");
-
   //actual R error
-  if(fail){
+  if(status == 0 || fail){
     if(killcount && is_timeout){
       Rf_errorcall(call, "timeout reached (%f sec)", totaltime);
     } else if(killcount) {
@@ -232,7 +229,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     } else if(isString(res) && Rf_length(res) && Rf_length(STRING_ELT(res, 0)) > 8){
       Rf_errorcall(R_NilValue, CHAR(STRING_ELT(res, 0)));
     }
-    Rf_errorcall(call, "unknown failure in child process");
+    Rf_errorcall(call, "child process has died");
   }
 
   //add timeout attribute
