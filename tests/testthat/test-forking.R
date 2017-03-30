@@ -88,3 +88,21 @@ test_that("frozen children get killed",{
   expect_before(eval_fork(freeze(FALSE), timeout = 1), 2)
   expect_before(eval_fork(freeze(TRUE), timeout = 1), 2)
 })
+
+test_that("condition class gets preserved", {
+  skip_on_os("windows")
+
+  test <- function(){
+    e <- structure(
+      list(message = "some message", call = NULL),
+      class = c("error", "condition", "my_custom_class")
+    )
+    base::stop(e)
+  }
+
+
+  err <- tryCatch(eval_safe(test()), error = function(e){e})
+  expect_s3_class(err, "error")
+  expect_s3_class(err, "my_custom_class")
+
+})

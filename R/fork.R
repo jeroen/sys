@@ -84,12 +84,13 @@ eval_safe <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
     substitute(while(dev.cur() > 1) dev.off()),
     substitute(FORK_EXPR_RESULT)
   ), error = function(e){
-    structure(e, class = "eval_fork_error")
+    old_class <- attr(e, "class")
+    structure(e, class = c(old_class, "eval_fork_error"))
   })
   out <- eval(call('eval_fork', expr = safe_expr, envir = envir, tmp = tmp,
                    timeout = timeout, std_out = std_out, std_err = std_err))
   if(inherits(out, "eval_fork_error")){
-    stop(simpleError(out$message, out$call))
+    base::stop(out)
   }
   if(out$visible)
     out$value
