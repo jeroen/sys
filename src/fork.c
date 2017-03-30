@@ -131,10 +131,10 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   bail_if(pipe(pipe_out) || pipe(pipe_err), "create output pipes");
 
   //fork the main process
+  int fail = -1;
   pid_t pid = fork();
   bail_if(pid < 0, "fork()");
 
-  int fail = 99;
   if(pid == 0){
     //prevents signals from being propagated to fork
     setpgid(0, 0);
@@ -153,6 +153,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     close(STDIN_FILENO);
 
     //execute
+    fail = 99; //not using this yet
     SEXP object = R_tryEval(call, env, &fail);
 
     //try to send the 'success byte' and then output
@@ -204,26 +205,34 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   bail_if(status < 0, "poll() on failure pipe");
 
   //read the 'success byte'
-  int bytes = status ? read(results[r], &fail, sizeof(fail)) : 0;
-  bail_if(bytes < 0, "read pipe");
-
-  //still alive: reading data
-  SEXP res = (bytes > 0) ? unserialize_from_pipe(results) : R_NilValue;
+  SEXP res = R_NilValue;
+  if(status > 0){
+    int child_is_alive = read(results[r], &fail, sizeof(fail));
+    bail_if(child_is_alive < 0, "read pipe");
+    if(child_is_alive > 0){
+      res = unserialize_from_pipe(results);
+    }
+  }
 
   //cleanup
   close(results[r]);
   kill(-pid, SIGKILL); //kills entire process group
-  waitpid(pid, NULL, 0);
+  waitpid(pid, NULL, 0); //wait for zombie(s) to die
 
-  //check for process error
-  if(bytes == 0 || fail){
-    if(killcount && is_timeout)
+  //results pipe was unresponsive
+  if(status == 0)
+    Rf_errorcall(call, "child process has died");
+
+  //actual R error
+  if(fail){
+    if(killcount && is_timeout){
       Rf_errorcall(call, "timeout reached (%f sec)", totaltime);
-    if(killcount)
+    } else if(killcount) {
       Rf_errorcall(call, "process interrupted by parent");
-    if(isString(res) && Rf_length(res) && Rf_length(STRING_ELT(res, 0)) > 8)
+    } else if(isString(res) && Rf_length(res) && Rf_length(STRING_ELT(res, 0)) > 8){
       Rf_errorcall(R_NilValue, CHAR(STRING_ELT(res, 0)));
-    Rf_errorcall(call, "child process died");
+    }
+    Rf_errorcall(call, "unknown failure in child process");
   }
 
   //add timeout attribute

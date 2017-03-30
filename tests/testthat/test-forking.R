@@ -25,7 +25,7 @@ test_that("eval_fork gives errors", {
   expect_error(eval_safe(blablabla()), "could not find function")
 
   # Test that proc dies properly
-  expect_error(eval_fork(tools::pskill(Sys.getpid())), "child process died")
+  expect_error(eval_fork(tools::pskill(Sys.getpid())), "child process")
   expect_error(eval_fork(Sys.sleep(10), timeout = 2), "timeout")
 
   # Test that tryCatch works
