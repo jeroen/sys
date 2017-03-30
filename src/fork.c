@@ -47,9 +47,7 @@ static int wait_for_action1(int fd, int ms){
 }
 
 static int is_alive(pid_t pid){
-  siginfo_t infop = {0};
-  bail_if(waitid(P_PID, pid, &infop, WEXITED | WSTOPPED | WNOHANG | WNOWAIT) < 0, "waitid after kill");
-  return !infop.si_pid;
+  return !waitpid(pid, NULL, WNOHANG);
 }
 
 /* Callback functions to serialize/unserialize via the pipe */
@@ -185,7 +183,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   double elapsed = 0;
   int is_timeout = 0;
   double totaltime = REAL(timeout)[0];
-  while(status == 0){
+  while(status == 0 && is_alive(pid)){
     //wait for pipe to hear from child
     if(is_timeout || pending_interrupt()){
       //looks like rstudio always does SIGKILL, regardless
@@ -237,4 +235,15 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
 
   //add timeout attribute
   return res;
+}
+
+//unit test helper function
+SEXP R_freeze(SEXP interrupt) {
+  int loop = 1;
+  while(loop){
+    if(asLogical(interrupt) && pending_interrupt())
+      break;
+    loop = 1+1;
+  }
+  return R_NilValue;
 }

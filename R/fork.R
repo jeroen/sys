@@ -101,3 +101,9 @@ eval_safe <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
 eval_fork_internal <- function(expr, envir, tmp, timeout, outfun, errfun){
   .Call(R_eval_fork, expr, envir, tmp, timeout, outfun, errfun)
 }
+
+#' @useDynLib sys R_freeze
+freeze <- function(interrupt = TRUE){
+  interrupt = as.logical(interrupt)
+  .Call(R_freeze, interrupt)
+}

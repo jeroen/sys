@@ -76,3 +76,15 @@ test_that("compatibility with parallel package", {
 
 })
 
+test_that("frozen children get killed",{
+  skip_on_os("windows")
+
+  expect_before <- function(expr, time){
+    elapsed <- system.time(try(expr, silent = TRUE))["elapsed"]
+    expect_lt(elapsed, time)
+  }
+
+  # test timers
+  expect_before(eval_fork(freeze(FALSE), timeout = 1), 2)
+  expect_before(eval_fork(freeze(TRUE), timeout = 1), 2)
+})
