@@ -34,3 +34,24 @@ test_that("eval_fork gives errors", {
   expect_is(eval_fork(tryCatch(blabla(), error = identity)), "simpleError")
 })
 
+test_that("eval_fork works recursively", {
+
+  expect_equal(eval_fork(eval_fork(1+1)), 2)
+  expect_equal(eval_fork(eval_fork(1+1) + eval_fork(1+1)), 4)
+
+  expect_error(eval_safe(eval_safe(stop("uhoh"))), "uhoh")
+  expect_error(eval_safe(eval_safe(blablabla())), "could not find function")
+
+  fib <- function(n){
+    eval_fork({
+      #print(Sys.getpid())
+      if(n < 2)
+        n
+      else
+        fib(n-1) + fib(n-2)
+    })
+  }
+  #forks 10 deep :o
+  expect_equal(fib(10), 55)
+})
+
