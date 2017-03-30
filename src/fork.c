@@ -182,7 +182,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   while(status == 0 && is_alive(pid)){
     //wait for pipe to hear from child
     if(is_timeout || pending_interrupt()){
-      warn_if(kill(pid, killcount ? SIGKILL : SIGKILL), "kill child");
+      warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
       status = wait_for_action1(results[r], 500);
       killcount++;
     } else {
@@ -202,7 +202,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   bail_if(status < 0, "poll() on failure pipe");
 
   //read the 'success byte'
-  int bytes = is_alive(pid) ? read(results[r], &fail, sizeof(fail)) : 0;
+  int bytes = read(results[r], &fail, sizeof(fail));
   bail_if(bytes < 0, "read pipe");
 
   //still alive: reading data
