@@ -60,7 +60,7 @@ void set_output(int fd, const char * file){
 
 void safe_close(int fd){
   int fdnull = open("/dev/null", O_WRONLY);
-  dup2(fdnull, fd);
+  warn_if(dup2(fdnull, fd), "dup2 in safe_close()");
   close(fdnull);
 }
 

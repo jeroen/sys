@@ -17,6 +17,7 @@ static int err = STDERR_FILENO;
 #define r 0
 #define w 1
 extern Rboolean R_isForkedChild;
+void safe_close(int fd);
 extern void warn_if(int err, const char * what);
 extern void bail_if(int err, const char * what);
 extern void set_pipe(int input, int output[2]);
@@ -150,7 +151,9 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
 
     //close read pipe
     close(results[r]);
-    close(STDIN_FILENO);
+
+    //This breaks parallel! See issue #11
+    safe_close(STDIN_FILENO);
 
     //execute
     fail = 99; //not using this yet
