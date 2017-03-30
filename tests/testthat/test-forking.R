@@ -42,16 +42,24 @@ test_that("eval_fork works recursively", {
   expect_error(eval_safe(eval_safe(stop("uhoh"))), "uhoh")
   expect_error(eval_safe(eval_safe(blablabla())), "could not find function")
 
-  fib <- function(n){
+  fib_fork <- function(n){
     eval_fork({
       #print(Sys.getpid())
-      if(n < 2)
-        n
-      else
-        fib(n-1) + fib(n-2)
+      if(n < 2) n else fib_fork(n-1) + fib_fork(n-2)
     })
   }
+
   #forks 10 deep :o
-  expect_equal(fib(10), 55)
+  expect_equal(fib_fork(10), 55)
+
+  fib_safe <- function(n){
+    eval_safe({
+      #print(Sys.getpid())
+      if(n < 2) n else fib_safe(n-1) + fib_safe(n-2)
+    })
+  }
+
+  #forks 10 deep :o
+  expect_equal(fib_safe(10), 55)
 })
 
