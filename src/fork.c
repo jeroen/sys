@@ -185,7 +185,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   double elapsed = 0;
   int is_timeout = 0;
   double totaltime = REAL(timeout)[0];
-  while(status == 0 && is_alive(pid)){
+  while(status == 0){
     //wait for pipe to hear from child
     if(is_timeout || pending_interrupt()){
       //looks like rstudio always does SIGKILL, regardless
