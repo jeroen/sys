@@ -101,6 +101,7 @@ eval_safe <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
 #' @useDynLib sys R_eval_fork
 eval_fork_internal <- function(expr, envir, tmp, timeout, outfun, errfun){
   timeout <- as.numeric(timeout)
+  tmp <- normalizePath(tmp)
   .Call(R_eval_fork, expr, envir, tmp, timeout, outfun, errfun)
 }
 
