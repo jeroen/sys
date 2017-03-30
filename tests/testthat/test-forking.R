@@ -63,3 +63,16 @@ test_that("eval_fork works recursively", {
   expect_equal(fib_safe(10), 55)
 })
 
+test_that("compatibility with parallel package", {
+  skip_on_os("windows")
+  square_fork <- function(x){
+    parallel::mccollect(parallel::mcparallel(x^2))[[1]]
+  }
+
+  # Run mcparallel inside sys
+  expect_equal(square_fork(5), 25)
+  expect_equal(eval_fork(square_fork(6)), 36)
+  expect_equal(eval_safe(square_fork(7)), 49)
+
+})
+
