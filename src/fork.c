@@ -207,7 +207,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
 
   //read the 'success byte'
   SEXP res = R_NilValue;
-  if(status > 0){
+  if(status > 0 || wait_for_action1(results[r], 500)){
     int child_is_alive = read(results[r], &fail, sizeof(fail));
     bail_if(child_is_alive < 0, "read pipe");
     if(child_is_alive > 0){
