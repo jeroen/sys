@@ -199,7 +199,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
       print_output(pipe_err, errfun);
       gettimeofday(&end, NULL);
       elapsed = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
-      is_timeout = elapsed > totaltime;
+      is_timeout = (totaltime > 0) && (elapsed > totaltime);
     }
   }
   warn_if(close(pipe_out[r]), "close stdout");
