@@ -35,7 +35,7 @@ test_that("eval_fork gives errors", {
 })
 
 test_that("eval_fork works recursively", {
-
+  skip_on_os("windows")
   expect_equal(eval_fork(eval_fork(1+1)), 2)
   expect_equal(eval_fork(eval_fork(1+1) + eval_fork(1+1)), 4)
 
