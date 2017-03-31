@@ -78,7 +78,7 @@ eval_safe <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
   orig_expr <- substitute(expr)
   safe_expr <- call('tryCatch', call('{',
     if(length(device))
-      call('options', device = substitute(device)),
+      call('options', device = device),
     substitute(while(dev.cur() > 1) dev.off()),
     substitute(options(menu.graphics = FALSE)),
     substitute(FORK_EXPR_RESULT <- withVisible(orig_expr)),
