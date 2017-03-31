@@ -77,7 +77,8 @@ eval_safe <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
                       std_out = stdout(), std_err = stderr(), device = pdf){
   orig_expr <- substitute(expr)
   safe_expr <- call('tryCatch', call('{',
-    call('options', device = substitute(device)),
+    if(length(device))
+      call('options', device = substitute(device)),
     substitute(while(dev.cur() > 1) dev.off()),
     substitute(options(menu.graphics = FALSE)),
     substitute(FORK_EXPR_RESULT <- withVisible(orig_expr)),
