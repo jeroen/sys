@@ -46,9 +46,11 @@ static int wait_for_action1(int fd, int ms){
   return 0;
 }
 
+/*
 static int is_alive(pid_t pid){
   return !waitpid(pid, NULL, WNOHANG);
 }
+*/
 
 /* Callback functions to serialize/unserialize via the pipe */
 static void OutBytesCB(R_outpstream_t stream, void * raw, int size){
@@ -143,10 +145,6 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     err = pipe_err[w];
     prepare_fork(CHAR(STRING_ELT(subtmp, 0)));
 
-    //this is only for output from subprocs
-    //set_pipe(STDOUT_FILENO, pipe_out);
-    //set_pipe(STDERR_FILENO, pipe_err);
-
     //close read pipe
     close(results[r]);
 
@@ -187,7 +185,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     //wait for pipe to hear from child
     if(is_timeout || pending_interrupt()){
       //looks like rstudio always does SIGKILL, regardless
-      warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
+      warn_if(kill(pid, killcount == 0 ? SIGINT : killcount == 1 ? SIGTERM : SIGKILL), "kill child");
       status = wait_for_action1(results[r], 500);
       killcount++;
     } else {
