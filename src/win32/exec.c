@@ -68,7 +68,7 @@ static DWORD WINAPI PrintPipe(HANDLE pipe, FILE *stream){
     if(!ReadFile(pipe, buffer, 65337, &len, NULL)){
       int err = GetLastError();
       if(err != ERROR_BROKEN_PIPE)
-        printf("ReadFile(pipe) failed (%d)\n", err);
+        Rprintf("ReadFile(pipe) failed (%d)\n", err);
       CloseHandle(pipe);
       ExitThread(0);
       return(0);
