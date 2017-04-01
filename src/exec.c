@@ -155,8 +155,13 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     //prevents signals from being propagated to fork
     setpgid(0, 0);
 
+    //Linux only: suicide when parent dies
+#ifdef PR_SET_PDEATHSIG
+    prctl(PR_SET_PDEATHSIG, SIGKILL);
+#endif
+
     // close STDIN for fork
-    close(STDIN_FILENO);
+    safe_close(STDIN_FILENO);
 
     //close all file descriptors before exit, otherwise they can segfault
     for (int i = 3; i < sysconf(_SC_OPEN_MAX); i++) {

@@ -140,6 +140,11 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     //prevents signals from being propagated to fork
     setpgid(0, 0);
 
+    //Linux only: suicide when parent dies
+#ifdef PR_SET_PDEATHSIG
+    prctl(PR_SET_PDEATHSIG, SIGKILL);
+#endif
+
     //this is the hacky stuff
     out = pipe_out[w];
     err = pipe_err[w];
