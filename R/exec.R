@@ -75,7 +75,6 @@
 #'
 #' # Run a background process (daemon)
 #' pid <- exec_background("ping", "localhost")
-#' exec_status(pid, wait = FALSE)
 #'
 #' # Kill it after a while
 #' Sys.sleep(2)
