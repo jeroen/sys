@@ -50,7 +50,7 @@ tryCatch(eval_safe(test()), error = function(e){
 })
 
 # Honor interrupt and timeout, even inside C evaluations
-eval_safe(svd(matrix(rnorm(1e8), 1e4)), timeout = 2)
+try(eval_safe(svd(matrix(rnorm(1e8), 1e4)), timeout = 2))
 
 # Capture output
 outcon <- rawConnection(raw(0), "r+")
