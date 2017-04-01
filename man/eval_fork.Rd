@@ -36,3 +36,25 @@ effects on the main R session, similar to \code{mccollect(mcparallel(expr))}. In
 the expression is wrapped in additional R code to catch errors, close graphics devices,
 etc. Not available on Windows because it requires \code{fork()}.
 }
+\examples{
+# Not available on Windows
+if(.Platform$OS.type == "unix"){
+
+# works like regular eval:
+eval_safe(rnorm(5))
+
+# Exceptions get propagated
+test <- function() { doesnotexit() }
+tryCatch(eval_safe(test()), error = function(e){
+  cat("oh no!", e$message, "\\n")
+})
+
+# Honor interrupt and timeout, even inside C evaluations
+eval_safe(svd(matrix(rnorm(1e8), 1e4)), timeout = 2)
+
+# Capture output
+outcon <- rawConnection(raw(0), "r+")
+eval_safe(print(sessionInfo()), std_out = outcon)
+rawToChar(rawConnectionValue(outcon))
+}
+}

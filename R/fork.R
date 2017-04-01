@@ -12,6 +12,26 @@
 #' @param envir the [environment] in which expr is to be evaluated
 #' @param tmp the value of [tempdir] inside the forked process
 #' @param timeout maximum time in seconds to allow for call to return
+#' @examples # Not available on Windows
+#' if(.Platform$OS.type == "unix"){
+#'
+#' # works like regular eval:
+#' eval_safe(rnorm(5))
+#'
+#' # Exceptions get propagated
+#' test <- function() { doesnotexit() }
+#' tryCatch(eval_safe(test()), error = function(e){
+#'   cat("oh no!", e$message, "\n")
+#' })
+#'
+#' # Honor interrupt and timeout, even inside C evaluations
+#' eval_safe(svd(matrix(rnorm(1e8), 1e4)), timeout = 2)
+#'
+#' # Capture output
+#' outcon <- rawConnection(raw(0), "r+")
+#' eval_safe(print(sessionInfo()), std_out = outcon)
+#' rawToChar(rawConnectionValue(outcon))
+#' }
 eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), timeout = 60,
                       std_out = stdout(), std_err = stderr()){
   # Convert TRUE or filepath into connection objects
