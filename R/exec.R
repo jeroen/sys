@@ -65,6 +65,25 @@
 #' @param std_err if and where to direct child process `STDERR`. Must be one of
 #' `TRUE`, `FALSE`, filename, connection object or callback function. See section
 #' on *Output Streams* below for details.
+#' @examples # Run a command (interrupt with CTRL+C)
+#' status <- exec_wait("date")
+#'
+#' # Capture std/out
+#' out <- exec_internal("date")
+#' print(out$status)
+#' cat(rawToChar(out$stdout))
+#'
+#' # Run a background process (daemon)
+#' pid <- exec_background("ping", "localhost")
+#' exec_status(pid, wait = FALSE)
+#'
+#' # Kill it after a while
+#' Sys.sleep(2)
+#' tools::pskill(pid)
+#'
+#' # Cleans up the zombie proc
+#' exec_status(pid)
+#' rm(pid)
 exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
   # Convert TRUE or filepath into connection objects
   std_out <- if(isTRUE(std_out) || identical(std_out, "")){

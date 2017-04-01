@@ -95,6 +95,27 @@ not in RGui because the latter has a custom I/O mechanism. Directing output to a
 file is usually the safest option.
 }
 
+\examples{
+# Run a command (interrupt with CTRL+C)
+status <- exec_wait("date")
+
+# Capture std/out
+out <- exec_internal("date")
+print(out$status)
+cat(rawToChar(out$stdout))
+
+# Run a background process (daemon)
+pid <- exec_background("ping", "localhost")
+exec_status(pid, wait = FALSE)
+
+# Kill it after a while
+Sys.sleep(2)
+tools::pskill(pid)
+
+# Cleans up the zombie proc
+exec_status(pid)
+rm(pid)
+}
 \seealso{
 Base \link{system2} and \link{pipe} provide other methods for running a system
 command with output.
