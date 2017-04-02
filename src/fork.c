@@ -16,7 +16,6 @@ static int err = STDERR_FILENO;
 
 #define r 0
 #define w 1
-extern Rboolean R_isForkedChild;
 void safe_close(int fd);
 extern void warn_if(int err, const char * what);
 extern void bail_if(int err, const char * what);
@@ -25,7 +24,8 @@ extern int wait_for_action2(int fd1, int fd2);
 extern void pipe_set_read(int pipe[2]);
 extern void print_output(int pipe_out[2], SEXP fun);
 extern int pending_interrupt();
-extern char * Sys_TempDir;
+
+void prepare_fork(const char * tmpdir);
 
 //output callbacks
 void write_out_ex(const char * buf, int size, int otype){
@@ -95,19 +95,6 @@ static void serialize_to_pipe(SEXP object, int results[2]){
 
   //TODO: this can raise an error so that the process never dies!
   R_Serialize(object, &stream);
-}
-
-void prepare_fork(const char * tmpdir){
-#ifndef R_SYS_BUILD_CLEAN
-  ptr_R_WriteConsole = NULL;
-  ptr_R_WriteConsoleEx = write_out_ex;
-  R_isForkedChild = 1;
-  R_Interactive = 0;
-  R_TempDir = strdup(tmpdir);
-#ifndef HAVE_VISIBILITY_ATTRIBUTE
-  Sys_TempDir = R_TempDir;
-#endif
-#endif
 }
 
 static SEXP unserialize_from_pipe(int results[2]){
