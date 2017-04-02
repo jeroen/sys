@@ -2,7 +2,6 @@
 #include <Rinterface.h>
 #include <Rembedded.h>
 #include <Rconfig.h>
-#include <R_ext/Visibility.h>
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
@@ -98,7 +97,7 @@ static void serialize_to_pipe(SEXP object, int results[2]){
   R_Serialize(object, &stream);
 }
 
-void attribute_hidden prepare_fork(const char * tmpdir){
+void prepare_fork(const char * tmpdir){
 #ifndef R_SYS_BUILD_CLEAN
   ptr_R_WriteConsole = NULL;
   ptr_R_WriteConsoleEx = write_out_ex;
