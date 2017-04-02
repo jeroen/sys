@@ -1,0 +1,14 @@
+PKG_LIBS = -fvisibility=hidden -L. -lsysextra
+SYSLIBEXTRA = libsysextra.a
+
+all: clean $(SHLIB)
+	install_name_tool -change libsysextra.so '@rpath/libsysextra.so' sys.so
+
+$(SHLIB): $(SYSLIBEXTRA)
+
+$(SYSLIBEXTRA): extra/prepare.o
+	$(AR) rcs $(SYSLIBEXTRA) extra/prepare.o
+	strip -SXTx $(SYSLIBEXTRA)
+
+clean:
+	rm -Rf $(SHLIB) $(OBJECTS) $(SYSLIBEXTRA) extra/prepare.o
