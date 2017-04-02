@@ -73,6 +73,8 @@
 #' print(out$status)
 #' cat(rawToChar(out$stdout))
 #'
+#' if(nchar(Sys.which("ping"))){
+#'
 #' # Run a background process (daemon)
 #' pid <- exec_background("ping", "localhost")
 #'
@@ -83,6 +85,7 @@
 #' # Cleans up the zombie proc
 #' exec_status(pid)
 #' rm(pid)
+#' }
 exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
   # Convert TRUE or filepath into connection objects
   std_out <- if(isTRUE(std_out) || identical(std_out, "")){

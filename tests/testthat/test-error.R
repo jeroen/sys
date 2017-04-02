@@ -1,6 +1,10 @@
 context("error handling")
 
 test_that("catching execution errors", {
+  # Test that 'ping' is on the path
+  skip_if_not(nchar(Sys.which('ping')), "ping utility is not available")
+
+  # Ping has different args for each platform
   sysname <- tolower(Sys.info()[["sysname"]])
   args <- switch(sysname,
      windows = c("-n 2", "localhost"),
@@ -8,10 +12,6 @@ test_that("catching execution errors", {
      linux = c("-c2", "localhost"),
      sunos = c("-s", "localhost", "64", "2")
   )
-
-  # Test that 'ping' is on the path
-  out <- system2("ping", args, stderr = FALSE, stdout = FALSE)
-  skip_if_not(out == 0, "ping utility is not available")
 
   # Run ping
   expect_equal(exec_wait("ping", args, std_out = FALSE), 0)

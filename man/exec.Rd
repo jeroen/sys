@@ -104,6 +104,8 @@ out <- exec_internal("date")
 print(out$status)
 cat(rawToChar(out$stdout))
 
+if(nchar(Sys.which("ping"))){
+
 # Run a background process (daemon)
 pid <- exec_background("ping", "localhost")
 
@@ -114,6 +116,7 @@ tools::pskill(pid)
 # Cleans up the zombie proc
 exec_status(pid)
 rm(pid)
+}
 }
 \seealso{
 Base \link{system2} and \link{pipe} provide other methods for running a system
