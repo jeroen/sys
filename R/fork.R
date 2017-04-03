@@ -93,12 +93,16 @@ eval_fork <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), time
 #' @export
 #' @importFrom grDevices pdf
 #' @param device graphics device to use in the fork, see [options]
+#' @param rlimits named list of [unix::rlimit] values to enforce in the child process.
+#' For example: `list(cpu = 60, data = 1e8, fsize = 1e6)`.
 eval_safe <- function(expr, envir = parent.frame(), tmp = tempfile("fork"), timeout = 60,
-                      std_out = stdout(), std_err = stderr(), device = pdf){
+        std_out = stdout(), std_err = stderr(), device = pdf, rlimits = list()){
   orig_expr <- substitute(expr)
   safe_expr <- call('tryCatch', call('{',
     if(length(device))
       call('options', device = device),
+    if(length(rlimits))
+      call('do.call', what = set_hard_limits, args = as.list(rlimits)),
     substitute(while(dev.cur() > 1) dev.off()),
     substitute(options(menu.graphics = FALSE)),
     substitute(FORK_EXPR_RESULT <- withVisible(orig_expr)),

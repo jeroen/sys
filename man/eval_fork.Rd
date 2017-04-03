@@ -9,7 +9,8 @@ eval_fork(expr, envir = parent.frame(), tmp = tempfile("fork"),
   timeout = 60, std_out = stdout(), std_err = stderr())
 
 eval_safe(expr, envir = parent.frame(), tmp = tempfile("fork"),
-  timeout = 60, std_out = stdout(), std_err = stderr(), device = pdf)
+  timeout = 60, std_out = stdout(), std_err = stderr(), device = pdf,
+  rlimits = list())
 }
 \arguments{
 \item{expr}{expression to evaluate}
@@ -29,6 +30,9 @@ on \emph{Output Streams} below for details.}
 on \emph{Output Streams} below for details.}
 
 \item{device}{graphics device to use in the fork, see \link{options}}
+
+\item{rlimits}{named list of \link[unix:rlimit]{unix::rlimit} values to enforce in the child process.
+For example: \code{list(cpu = 60, data = 1e8, fsize = 1e6)}.}
 }
 \description{
 Version of \link{eval} which evaluates expression in a temporary fork so that it has no side
