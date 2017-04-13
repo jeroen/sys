@@ -5,10 +5,7 @@ matrix:
   include:
     - os: linux
       dist: precise
-      sudo: false
-    - os: linux
-      dist: precise
-      sudo: required
+      sudo: required # weird problem with 'ping' in docker
     - os: linux
       dist: trusty
       env: R_CODECOV=true
