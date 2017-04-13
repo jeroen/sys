@@ -31,29 +31,21 @@ on \emph{Output Streams} below for details.}
 \item{priority}{(integer) priority of the child process. High value is low priority.
 Non root user may only raise this value (decrease priority)}
 
-\item{uid}{(integer) User ID of the child process. Can only be set by root}
+\item{uid}{evaluate as given user (uid or name). See \code{\link[unix:setuid]{unix::setuid()}}, only for root.}
 
-\item{gid}{(integer) Group ID of the child process. Can only be set by root}
+\item{gid}{evaluate as given group (gid or name). See \code{\link[unix:setgid]{unix::setgid()}} only for root.}
 
-\item{rlimits}{vector of rlimit values inside the child}
+\item{rlimits}{named vector/list with rlimit values, for example: \code{c(cpu = 60, fsize = 1e6)}.}
 
 \item{device}{graphics device to use in the fork, see \code{\link[=dev.new]{dev.new()}}}
 
 \item{profile}{AppArmor profile, see \code{RAppArmor::aa_change_profile()}.
 Requires the \code{RAppArmor} package (Debian/Ubuntu only)}
-
-\item{rlimits}{named list of \link{rlimit} values, for example: \code{list(cpu = 60, fsize = 1e6)}.}
-
-\item{uid}{evaluate as given user (uid or name). See \code{\link[=setuid]{setuid()}}, only for root.}
-
-\item{gid}{evaluate as given group (gid or name). See \code{\link[=setgid]{setgid()}} only for root.}
-
-\item{priority}{process priority, see \code{\link[=setpriority]{setpriority()}}.}
 }
 \description{
-Evaluates an expression in a temporary fork so that it has no side effects on the main R session.
-For \code{\link[=eval_safe]{eval_safe()}} the expression is wrapped in additional R code to set \link[=rlimit]{rlimits}, catch
-errors, close graphics devices, etc (recommended).
+Evaluates an expression in a temporary fork so that it has no side effects on the main
+R session. For \code{\link[=eval_safe]{eval_safe()}} the expression is wrapped in additional R code to deal with
+errors and graphics devices (recommended).
 }
 \examples{
 # works like regular eval:

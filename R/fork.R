@@ -1,8 +1,8 @@
 #' Safe Evaluation
 #'
-#' Evaluates an expression in a temporary fork so that it has no side effects on the main R session.
-#' For [eval_safe()] the expression is wrapped in additional R code to set [rlimits][rlimit], catch
-#' errors, close graphics devices, etc (recommended).
+#' Evaluates an expression in a temporary fork so that it has no side effects on the main
+#' R session. For [eval_safe()] the expression is wrapped in additional R code to deal with
+#' errors and graphics devices (recommended).
 #'
 #' @export
 #' @rdname eval_fork
@@ -10,11 +10,6 @@
 #' @param expr expression to evaluate
 #' @param tmp the value of [tempdir()] inside the forked process
 #' @param timeout maximum time in seconds to allow for call to return
-#' @param priority (integer) priority of the child process. High value is low priority.
-#' Non root user may only raise this value (decrease priority)
-#' @param uid (integer) User ID of the child process. Can only be set by root
-#' @param gid (integer) Group ID of the child process. Can only be set by root
-#' @param rlimits vector of rlimit values inside the child
 #' @examples # works like regular eval:
 #' eval_safe(rnorm(5))
 #'
@@ -90,10 +85,11 @@ eval_fork <- function(expr, tmp = tempfile("fork"), timeout = 60, std_out = stdo
 #' @export
 #' @importFrom grDevices pdf dev.cur dev.off
 #' @param device graphics device to use in the fork, see [dev.new()]
-#' @param rlimits named list of [rlimit] values, for example: `list(cpu = 60, fsize = 1e6)`.
-#' @param uid evaluate as given user (uid or name). See [setuid()], only for root.
-#' @param gid evaluate as given group (gid or name). See [setgid()] only for root.
-#' @param priority process priority, see [setpriority()].
+#' @param rlimits named vector/list with rlimit values, for example: `c(cpu = 60, fsize = 1e6)`.
+#' @param uid evaluate as given user (uid or name). See [unix::setuid()], only for root.
+#' @param gid evaluate as given group (gid or name). See [unix::setgid()] only for root.
+#' @param priority (integer) priority of the child process. High value is low priority.
+#' Non root user may only raise this value (decrease priority)
 #' @param profile AppArmor profile, see `RAppArmor::aa_change_profile()`.
 #' Requires the `RAppArmor` package (Debian/Ubuntu only)
 eval_safe <- function(expr, tmp = tempfile("fork"), timeout = 60, std_out = stdout(),

@@ -1,5 +1,7 @@
 #!/bin/sh
+
+# Supresses check warnings about API calls within the forked process
 PWD=`pwd`
 case "$PWD" in *"sys.Rcheck"*)
-echo "PKG_CFLAGS = -DR_SYS_BUILD_CLEAN" > src/Makevars
+echo "PKG_CFLAGS = -DR_BUILD_CLEAN" > src/Makevars
 esac
