@@ -2,7 +2,7 @@ context("error handling")
 
 test_that("catching execution errors", {
   # Test that 'ping' is on the path
-  skip_if_not(nchar(Sys.which('ping')), "ping utility is not available")
+  skip_if_not(as.logical(nchar(Sys.which('ping'))), "ping utility is not available")
 
   # Ping has different args for each platform
   sysname <- tolower(Sys.info()[["sysname"]])

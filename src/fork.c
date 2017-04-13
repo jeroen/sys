@@ -8,37 +8,38 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <time.h>
+#include <errno.h>
 #include <sys/time.h>
 #include <sys/wait.h>
+#include <sys/resource.h>
 
+static const int R_DefaultSerializeVersion = 2;
 static int out = STDOUT_FILENO;
 static int err = STDERR_FILENO;
 
 #define r 0
 #define w 1
+
+#define waitms 200
+
 extern Rboolean R_isForkedChild;
-void safe_close(int fd);
-extern void warn_if(int err, const char * what);
-extern void bail_if(int err, const char * what);
-extern void set_pipe(int input, int output[2]);
-extern int wait_for_action2(int fd1, int fd2);
-extern void pipe_set_read(int pipe[2]);
-extern void print_output(int pipe_out[2], SEXP fun);
-extern int pending_interrupt();
 extern char * Sys_TempDir;
+extern void bail_if(int err, const char * what);
+extern void warn_if(int err, const char * what);
+extern void safe_close(int fd);
+extern void set_pipe(int input, int output[2]);
+extern void pipe_set_read(int pipe[2]);
+extern void check_interrupt_fn(void *dummy);
+extern int pending_interrupt();
+extern int wait_for_action2(int fd1, int fd2);
+extern void print_output(int pipe_out[2], SEXP fun);
 
 //output callbacks
 void write_out_ex(const char * buf, int size, int otype){
   warn_if(write(otype ? err : out, buf, size), "problem writing back to std_out / std_err");
 }
 
-#define MAX(x, y) (((x) > (y)) ? (x) : (y))
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
-
-#define waitms 200
-static const int R_DefaultSerializeVersion = 2;
-
-static int wait_for_action1(int fd, int ms){
+static int wait_with_timeout(int fd, int ms){
   short events = POLLIN | POLLERR | POLLHUP;
   struct pollfd ufds = {fd, events, 0};
   if(poll(&ufds, 1, ms) > 0)
@@ -48,7 +49,7 @@ static int wait_for_action1(int fd, int ms){
 
 /*
 static int is_alive(pid_t pid){
-  return !waitpid(pid, NULL, WNOHANG);
+return !waitpid(pid, NULL, WNOHANG);
 }
 */
 
@@ -97,8 +98,20 @@ static void serialize_to_pipe(SEXP object, int results[2]){
   R_Serialize(object, &stream);
 }
 
+int Fake_ReadConsole(const char * a, unsigned char * b, int c, int d){
+  return 0;
+}
+
+void Fake_Flush(){
+
+}
+
+//within the forked process, so not call parent console
 void prepare_fork(const char * tmpdir){
-#ifndef R_SYS_BUILD_CLEAN
+#ifndef R_BUILD_CLEAN
+  ptr_R_ResetConsole = Fake_Flush;
+  ptr_R_FlushConsole = Fake_Flush;
+  ptr_R_ReadConsole = Fake_ReadConsole;
   ptr_R_WriteConsole = NULL;
   ptr_R_WriteConsoleEx = write_out_ex;
   R_isForkedChild = 1;
@@ -124,7 +137,48 @@ static SEXP unserialize_from_pipe(int results[2]){
   return R_Unserialize(&stream);
 }
 
-SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SEXP errfun){
+#ifndef RLIMIT_NPROC
+#define RLIMIT_NPROC NA_INTEGER
+#endif
+
+#ifndef RLIMIT_MEMLOCK
+#define RLIMIT_MEMLOCK NA_INTEGER
+#endif
+
+// Order should match the R function
+static int rlimit_types[9] = {
+  RLIMIT_AS, //0
+  RLIMIT_CORE, //1
+  RLIMIT_CPU, //2
+  RLIMIT_DATA, //3
+  RLIMIT_FSIZE, //4
+  RLIMIT_MEMLOCK, //5
+  RLIMIT_NOFILE, //6
+  RLIMIT_NPROC, //7
+  RLIMIT_STACK, //8
+};
+
+//VECTOR of length n;
+void set_process_rlimits(SEXP limitvec){
+  if(!Rf_isNumeric(limitvec))
+    Rf_error("limitvec is not numeric");
+  size_t len = sizeof(rlimit_types)/sizeof(rlimit_types[0]);
+  if(Rf_length(limitvec) != len)
+    Rf_error("limitvec wrong size");
+  for(int i = 0; i < len; i++){
+    int resource = rlimit_types[i];
+    double val = REAL(limitvec)[i];
+    if(ISNA(resource) || ISNA(val))
+      continue;
+    rlim_t rlim_val = val;
+    //Rprintf("Setting %d to %d\n", resource,  rlim_val);
+    struct rlimit lim = {rlim_val, rlim_val};
+    bail_if(setrlimit(resource, &lim) < 0, "setrlimit()");
+  }
+}
+
+SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SEXP errfun,
+                 SEXP priority, SEXP uid, SEXP gid, SEXP limitvec){
   int results[2];
   int pipe_out[2];
   int pipe_err[2];
@@ -140,7 +194,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     //prevents signals from being propagated to fork
     setpgid(0, 0);
 
-    //Linux only: suicide when parent dies
+    //Linux only: commit suicide when parent dies
 #ifdef PR_SET_PDEATHSIG
     prctl(PR_SET_PDEATHSIG, SIGKILL);
 #endif
@@ -149,6 +203,19 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     out = pipe_out[w];
     err = pipe_err[w];
     prepare_fork(CHAR(STRING_ELT(subtmp, 0)));
+
+    //set process priority (before changing uid)
+    if(Rf_length(priority))
+      bail_if(setpriority(PRIO_PROCESS, 0, Rf_asInteger(priority)) < 0, "setpriority()");
+
+    //set rlimits (before changing uid)
+    set_process_rlimits(limitvec);
+
+    //set user and group ID (group first!)
+    if(Rf_length(gid))
+      bail_if(setuid(Rf_asInteger(gid)), "setuid()");
+    if(Rf_length(uid))
+      bail_if(setgid(Rf_asInteger(uid)), "setgid()");
 
     //close read pipe
     close(results[r]);
@@ -191,11 +258,11 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     if(is_timeout || pending_interrupt()){
       //looks like rstudio always does SIGKILL, regardless
       warn_if(kill(pid, killcount == 0 ? SIGINT : killcount == 1 ? SIGTERM : SIGKILL), "kill child");
-      status = wait_for_action1(results[r], 500);
+      status = wait_with_timeout(results[r], 500);
       killcount++;
     } else {
       wait_for_action2(pipe_out[r], pipe_err[r]);
-      status = wait_for_action1(results[r], 0);
+      status = wait_with_timeout(results[r], 0);
 
       //empty pipes
       print_output(pipe_out, outfun);

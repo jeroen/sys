@@ -4,12 +4,18 @@ test_that("eval_fork works", {
   skip_on_os("windows")
 
   # PID must be different
-  expect_true(Sys.getpid() != eval_fork(Sys.getpid()))
+  expect_false(Sys.getpid() == eval_fork(Sys.getpid()))
+  expect_equal(unix::getpid(), eval_fork(unix::getppid()))
 
-  # State is inherited
-  n <- 10
-  x <- eval_fork(rnorm(n))
-  expect_identical(x, rnorm(n))
+  # initiates RNG with a seed (needed below)
+  rnorm(1)
+
+  # Test that state is inherited
+  x <- eval_fork(rnorm(10))
+  y <- eval_fork(rnorm(10))
+  z <- rnorm(10)
+  expect_identical(x, y)
+  expect_identical(x, z)
 
   # Test cleanups
   for(i in 1:300){
@@ -36,6 +42,7 @@ test_that("eval_fork gives errors", {
 
 test_that("eval_fork works recursively", {
   skip_on_os("windows")
+
   expect_equal(eval_fork(eval_fork(1+1)), 2)
   expect_equal(eval_fork(eval_fork(1+1) + eval_fork(1+1)), 4)
 
@@ -65,6 +72,7 @@ test_that("eval_fork works recursively", {
 
 test_that("compatibility with parallel package", {
   skip_on_os("windows")
+
   square_fork <- function(x){
     parallel::mccollect(parallel::mcparallel(x^2))[[1]]
   }
@@ -73,10 +81,9 @@ test_that("compatibility with parallel package", {
   expect_equal(square_fork(5), 25)
   expect_equal(eval_fork(square_fork(6)), 36)
   expect_equal(eval_safe(square_fork(7)), 49)
-
 })
 
-test_that("frozen children get killed",{
+test_that("frozen children get killed", {
   skip_on_os("windows")
 
   expect_before <- function(expr, time){
@@ -100,9 +107,29 @@ test_that("condition class gets preserved", {
     base::stop(e)
   }
 
-
   err <- tryCatch(eval_safe(test()), error = function(e){e})
   expect_s3_class(err, "error")
   expect_s3_class(err, "my_custom_class")
 
+})
+
+test_that("scope environment is correct", {
+  skip_on_os("windows")
+  (test <- function(){
+    mydev <- grDevices::pdf
+    timer <- 60
+    x <- 42
+    blabla <- function(){
+      return(x)
+    }
+    testfun <- function(){
+      blabla()
+    }
+    testerr <- function(){
+      doesnotexit()
+    }
+    expect_equal(42, eval_safe(testfun(), dev = mydev, timeout = timer))
+    expect_equal(42, eval_fork(testfun(), timeout = timer))
+    expect_error(eval_safe(testerr()), "doesnotexit")
+  })()
 })

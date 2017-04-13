@@ -3,21 +3,20 @@
 \name{eval_fork}
 \alias{eval_fork}
 \alias{eval_safe}
-\title{Evaluate in fork}
+\title{Safe Evaluation}
 \usage{
-eval_fork(expr, envir = parent.frame(), tmp = tempfile("fork"),
-  timeout = 60, std_out = stdout(), std_err = stderr())
+eval_fork(expr, tmp = tempfile("fork"), timeout = 60, std_out = stdout(),
+  std_err = stderr(), priority = NULL, uid = NULL, gid = NULL,
+  rlimits = NULL)
 
-eval_safe(expr, envir = parent.frame(), tmp = tempfile("fork"),
-  timeout = 60, std_out = stdout(), std_err = stderr(), device = pdf,
-  rlimits = list())
+eval_safe(expr, tmp = tempfile("fork"), timeout = 60, std_out = stdout(),
+  std_err = stderr(), device = pdf, rlimits = list(), uid = NULL,
+  gid = NULL, priority = NULL, profile = NULL)
 }
 \arguments{
 \item{expr}{expression to evaluate}
 
-\item{envir}{the \link{environment} in which expr is to be evaluated}
-
-\item{tmp}{the value of \link{tempdir} inside the forked process}
+\item{tmp}{the value of \code{\link[=tempdir]{tempdir()}} inside the forked process}
 
 \item{timeout}{maximum time in seconds to allow for call to return}
 
@@ -29,21 +28,34 @@ on \emph{Output Streams} below for details.}
 \code{TRUE}, \code{FALSE}, filename, connection object or callback function. See section
 on \emph{Output Streams} below for details.}
 
-\item{device}{graphics device to use in the fork, see \link{options}}
+\item{priority}{(integer) priority of the child process. High value is low priority.
+Non root user may only raise this value (decrease priority)}
 
-\item{rlimits}{named list of \link[unix:rlimit]{unix::rlimit} values to enforce in the child process.
-For example: \code{list(cpu = 60, data = 1e8, fsize = 1e6)}.}
+\item{uid}{(integer) User ID of the child process. Can only be set by root}
+
+\item{gid}{(integer) Group ID of the child process. Can only be set by root}
+
+\item{rlimits}{vector of rlimit values inside the child}
+
+\item{device}{graphics device to use in the fork, see \code{\link[=dev.new]{dev.new()}}}
+
+\item{profile}{AppArmor profile, see \code{RAppArmor::aa_change_profile()}.
+Requires the \code{RAppArmor} package (Debian/Ubuntu only)}
+
+\item{rlimits}{named list of \link{rlimit} values, for example: \code{list(cpu = 60, fsize = 1e6)}.}
+
+\item{uid}{evaluate as given user (uid or name). See \code{\link[=setuid]{setuid()}}, only for root.}
+
+\item{gid}{evaluate as given group (gid or name). See \code{\link[=setgid]{setgid()}} only for root.}
+
+\item{priority}{process priority, see \code{\link[=setpriority]{setpriority()}}.}
 }
 \description{
-Version of \link{eval} which evaluates expression in a temporary fork so that it has no side
-effects on the main R session, similar to \code{mccollect(mcparallel(expr))}. In \link{eval_safe}
-the expression is wrapped in additional R code to catch errors, close graphics devices,
-etc. Not available on Windows because it requires \code{fork()}.
+Evaluates an expression in a temporary fork so that it has no side effects on the main R session.
+For \code{\link[=eval_safe]{eval_safe()}} the expression is wrapped in additional R code to set \link[=rlimit]{rlimits}, catch
+errors, close graphics devices, etc (recommended).
 }
 \examples{
-# Not available on Windows
-if(.Platform$OS.type == "unix"){
-
 # works like regular eval:
 eval_safe(rnorm(5))
 
@@ -59,6 +71,5 @@ try(eval_safe(svd(matrix(rnorm(1e8), 1e4)), timeout = 2))
 # Capture output
 outcon <- rawConnection(raw(0), "r+")
 eval_safe(print(sessionInfo()), std_out = outcon)
-rawToChar(rawConnectionValue(outcon))
-}
+cat(rawToChar(rawConnectionValue(outcon)))
 }
