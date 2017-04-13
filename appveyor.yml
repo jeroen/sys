@@ -22,6 +22,9 @@ on_failure:
   - 7z a failure.zip *.Rcheck\*
   - appveyor PushArtifact failure.zip
 
+environment:
+  _R_CHECK_FORCE_SUGGESTS_: false
+
 artifacts:
   - path: '*.Rcheck\**\*.log'
     name: Logs
