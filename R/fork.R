@@ -10,7 +10,10 @@
 #' @param expr expression to evaluate
 #' @param tmp the value of [tempdir()] inside the forked process
 #' @param timeout maximum time in seconds to allow for call to return
-#' @examples # works like regular eval:
+#' @examples #Only works on Unix
+#' if(.Platform$OS.type == "unix"){
+#'
+#' # works like regular eval:
 #' eval_safe(rnorm(5))
 #'
 #' # Exceptions get propagated
@@ -26,6 +29,7 @@
 #' outcon <- rawConnection(raw(0), "r+")
 #' eval_safe(print(sessionInfo()), std_out = outcon)
 #' cat(rawToChar(rawConnectionValue(outcon)))
+#' }
 eval_fork <- function(expr, tmp = tempfile("fork"), timeout = 60, std_out = stdout(),
                       std_err = stderr(), priority = NULL, uid = NULL, gid = NULL, rlimits = NULL){
   # Convert TRUE or filepath into connection objects

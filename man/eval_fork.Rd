@@ -48,6 +48,9 @@ R session. For \code{\link[=eval_safe]{eval_safe()}} the expression is wrapped i
 errors and graphics devices (recommended).
 }
 \examples{
+#Only works on Unix
+if(.Platform$OS.type == "unix"){
+
 # works like regular eval:
 eval_safe(rnorm(5))
 
@@ -64,4 +67,5 @@ try(eval_safe(svd(matrix(rnorm(1e8), 1e4)), timeout = 2))
 outcon <- rawConnection(raw(0), "r+")
 eval_safe(print(sessionInfo()), std_out = outcon)
 cat(rawToChar(rawConnectionValue(outcon)))
+}
 }
