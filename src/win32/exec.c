@@ -243,6 +243,6 @@ SEXP R_exec_status(SEXP rpid, SEXP wait){
   return ScalarInteger(exit_code == STILL_ACTIVE ? NA_INTEGER : exit_code);
 }
 
-SEXP R_eval_fork(...){
+SEXP R_eval_fork(SEXP x, ...){
   Rf_error("eval_fork not available on windows");
 }
