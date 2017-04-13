@@ -30,8 +30,8 @@
 #' eval_safe(print(sessionInfo()), std_out = outcon)
 #' cat(rawToChar(rawConnectionValue(outcon)))
 #' }
-eval_fork <- function(expr, tmp = tempfile("fork"), timeout = 60, std_out = stdout(),
-                      std_err = stderr(), priority = NULL, uid = NULL, gid = NULL, rlimits = NULL){
+eval_fork <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err = stderr(),
+                      timeout = 0, priority = NULL, uid = NULL, gid = NULL, rlimits = NULL){
   # Convert TRUE or filepath into connection objects
   std_out <- if(isTRUE(std_out) || identical(std_out, "")){
     stdout()
@@ -96,9 +96,9 @@ eval_fork <- function(expr, tmp = tempfile("fork"), timeout = 60, std_out = stdo
 #' Non root user may only raise this value (decrease priority)
 #' @param profile AppArmor profile, see `RAppArmor::aa_change_profile()`.
 #' Requires the `RAppArmor` package (Debian/Ubuntu only)
-eval_safe <- function(expr, tmp = tempfile("fork"), timeout = 60, std_out = stdout(),
-                      std_err = stderr(), device = pdf, rlimits = list(), uid = NULL,
-                      gid = NULL, priority = NULL, profile = NULL){
+eval_safe <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err = stderr(),
+                      timeout = 0, priority = NULL, uid = NULL, gid = NULL, rlimits = NULL,
+                      profile = NULL, device = pdf){
   orig_expr <- substitute(expr)
   out <- eval_fork(expr = tryCatch({
     if(length(device))
@@ -138,8 +138,11 @@ eval_fork_internal <- function(expr, envir, tmp, timeout, outfun, errfun, priori
     stopifnot(is.numeric(gid))
   if(length(priority))
     stopifnot(is.numeric(priority))
-  if(length(timeout))
+  if(length(timeout)){
     stopifnot(is.numeric(timeout))
+  } else {
+    timeout <- 0
+  }
   uid <- as.integer(uid)
   gid <- as.integer(gid)
   priority <- as.integer(priority)

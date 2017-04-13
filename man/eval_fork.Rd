@@ -5,20 +5,18 @@
 \alias{eval_safe}
 \title{Safe Evaluation}
 \usage{
-eval_fork(expr, tmp = tempfile("fork"), timeout = 60, std_out = stdout(),
-  std_err = stderr(), priority = NULL, uid = NULL, gid = NULL,
-  rlimits = NULL)
+eval_fork(expr, tmp = tempfile("fork"), std_out = stdout(),
+  std_err = stderr(), timeout = 0, priority = NULL, uid = NULL,
+  gid = NULL, rlimits = NULL)
 
-eval_safe(expr, tmp = tempfile("fork"), timeout = 60, std_out = stdout(),
-  std_err = stderr(), device = pdf, rlimits = list(), uid = NULL,
-  gid = NULL, priority = NULL, profile = NULL)
+eval_safe(expr, tmp = tempfile("fork"), std_out = stdout(),
+  std_err = stderr(), timeout = 0, priority = NULL, uid = NULL,
+  gid = NULL, rlimits = NULL, profile = NULL, device = pdf)
 }
 \arguments{
 \item{expr}{expression to evaluate}
 
 \item{tmp}{the value of \code{\link[=tempdir]{tempdir()}} inside the forked process}
-
-\item{timeout}{maximum time in seconds to allow for call to return}
 
 \item{std_out}{if and where to direct child process \code{STDOUT}. Must be one of
 \code{TRUE}, \code{FALSE}, filename, connection object or callback function. See section
@@ -27,6 +25,8 @@ on \emph{Output Streams} below for details.}
 \item{std_err}{if and where to direct child process \code{STDERR}. Must be one of
 \code{TRUE}, \code{FALSE}, filename, connection object or callback function. See section
 on \emph{Output Streams} below for details.}
+
+\item{timeout}{maximum time in seconds to allow for call to return}
 
 \item{priority}{(integer) priority of the child process. High value is low priority.
 Non root user may only raise this value (decrease priority)}
@@ -37,10 +37,10 @@ Non root user may only raise this value (decrease priority)}
 
 \item{rlimits}{named vector/list with rlimit values, for example: \code{c(cpu = 60, fsize = 1e6)}.}
 
-\item{device}{graphics device to use in the fork, see \code{\link[=dev.new]{dev.new()}}}
-
 \item{profile}{AppArmor profile, see \code{RAppArmor::aa_change_profile()}.
 Requires the \code{RAppArmor} package (Debian/Ubuntu only)}
+
+\item{device}{graphics device to use in the fork, see \code{\link[=dev.new]{dev.new()}}}
 }
 \description{
 Evaluates an expression in a temporary fork so that it has no side effects on the main
