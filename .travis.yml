@@ -27,6 +27,7 @@ addons:
   apt:
     packages:
       - iputils-ping
+      - libapparmor-dev
 
 r_github_packages:
   - jimhester/covr
