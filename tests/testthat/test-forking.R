@@ -30,7 +30,9 @@ test_that("eval_fork gives errors", {
   expect_error(eval_safe(stop("uhoh")), "uhoh")
   expect_error(eval_safe(blablabla()), "could not find function")
 
-  # Test that proc dies properly
+  # Test that proc dies without wiping tempdir()
+  expect_error(eval_fork(q()), "died")
+  expect_true(file.exists(tempdir()))
   expect_error(eval_fork(tools::pskill(Sys.getpid())), "child process")
   expect_error(eval_fork(Sys.sleep(10), timeout = 2), "timeout")
 

@@ -101,7 +101,7 @@ void My_R_Flush(){
 
 void My_R_CleanUp (SA_TYPE saveact, int status, int RunLast){
 #ifdef SYS_BUILD_SAFE
-  R_RunExitFinalizers();
+  //R_RunExitFinalizers();
   Rf_KillAllDevices();
 #endif
 }
