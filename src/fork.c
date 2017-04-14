@@ -108,7 +108,7 @@ void Fake_Flush(){
 
 //within the forked process, so not call parent console
 void prepare_fork(const char * tmpdir){
-#ifndef R_BUILD_CLEAN
+#ifdef SYS_BUILD_SAFE
   ptr_R_ResetConsole = Fake_Flush;
   ptr_R_FlushConsole = Fake_Flush;
   ptr_R_ReadConsole = Fake_ReadConsole;
@@ -120,6 +120,14 @@ void prepare_fork(const char * tmpdir){
 #ifndef HAVE_VISIBILITY_ATTRIBUTE
   Sys_TempDir = R_TempDir;
 #endif
+#endif
+}
+
+SEXP R_safe_build(){
+#ifdef SYS_BUILD_SAFE
+  return ScalarLogical(TRUE);
+#else
+  return ScalarLogical(FALSE);
 #endif
 }
 

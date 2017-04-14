@@ -1,6 +1,0 @@
-#!/bin/sh
-
-# Supresses check warnings about API calls within the forked process
-if [ "$_R_SHLIB_BUILD_OBJECTS_SYMBOL_TABLES_" ]; then
-  echo "PKG_CFLAGS = -DR_BUILD_CLEAN" > src/Makevars
-fi

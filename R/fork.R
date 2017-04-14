@@ -166,3 +166,8 @@ parse_limits <- function(..., as = NA, core = NA, cpu = NA, data = NA, fsize = N
 freeze <- function(interrupt = TRUE){
   .Call(R_freeze, as.logical(interrupt))
 }
+
+#' @useDynLib sys R_safe_build
+safe_build <- function(){
+  .Call(R_safe_build)
+}
