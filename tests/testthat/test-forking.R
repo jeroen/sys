@@ -133,3 +133,35 @@ test_that("scope environment is correct", {
     expect_error(eval_safe(testerr()), "doesnotexit")
   })()
 })
+
+test_that("stdout gets redirected to parent",{
+  skip_on_os("windows")
+  skip_if_not(safe_build())
+
+  outcon <- rawConnection(raw(0), "r+")
+  errcon <- rawConnection(raw(0), "r+")
+
+  out <- eval_fork({
+    cat("foo")
+    cat("bar", file = stderr())
+    42
+  }, std_out = outcon, std_err = errcon)
+
+  expect_identical(out, 42)
+
+  expect_identical(rawConnectionValue(outcon), charToRaw("foo"))
+  expect_identical(rawConnectionValue(errcon), charToRaw("bar"))
+
+  close(outcon)
+  close(errcon)
+})
+
+test_that("tempdir gets set", {
+  skip_on_os("windows")
+  skip_if_not(safe_build())
+
+  subtmp <- eval_fork(tempdir())
+  expect_equal(normalizePath(tempdir()), normalizePath(dirname(subtmp)))
+  expect_true(grepl("^fork", basename(subtmp)))
+})
+

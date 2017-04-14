@@ -7,9 +7,18 @@
 #' @export
 #' @rdname eval_fork
 #' @inheritParams exec
+#' @importFrom grDevices pdf dev.cur dev.off
 #' @param expr expression to evaluate
 #' @param tmp the value of [tempdir()] inside the forked process
 #' @param timeout maximum time in seconds to allow for call to return
+#' @param device graphics device to use in the fork, see [dev.new()]
+#' @param rlimits named vector/list with rlimit values, for example: `c(cpu = 60, fsize = 1e6)`.
+#' @param uid evaluate as given user (uid or name). See [unix::setuid()], only for root.
+#' @param gid evaluate as given group (gid or name). See [unix::setgid()] only for root.
+#' @param priority (integer) priority of the child process. High value is low priority.
+#' Non root user may only raise this value (decrease priority)
+#' @param profile AppArmor profile, see `RAppArmor::aa_change_profile()`.
+#' Requires the `RAppArmor` package (Debian/Ubuntu only)
 #' @examples #Only works on Unix
 #' if(.Platform$OS.type == "unix"){
 #'
@@ -30,6 +39,40 @@
 #' eval_safe(print(sessionInfo()), std_out = outcon)
 #' cat(rawToChar(rawConnectionValue(outcon)))
 #' }
+eval_safe <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err = stderr(),
+                      timeout = 0, priority = NULL, uid = NULL, gid = NULL, rlimits = NULL,
+                      profile = NULL, device = pdf){
+  orig_expr <- substitute(expr)
+  out <- eval_fork(expr = tryCatch({
+    if(length(device))
+      options(device = device)
+    if(length(profile)){
+      tryCatch(check_apparmor(), error = function(e){
+        warning("You can only use the 'profile' parameter when RAppArmor is installed")
+        stop(e)
+      })
+      RAppArmor::aa_change_profile(profile)
+    }
+    while(dev.cur() > 1) dev.off()
+    options(menu.graphics = FALSE)
+    withVisible(eval(orig_expr, parent.frame()))
+  }, error = function(e){
+    old_class <- attr(e, "class")
+    structure(e, class = c(old_class, "eval_fork_error"))
+  }, finally = substitute(while(dev.cur() > 1) dev.off())),
+  tmp = tmp, timeout = timeout, std_out = std_out, std_err = std_err, priority = priority,
+  uid = uid, gid = gid, rlimits = rlimits)
+  if(inherits(out, "eval_fork_error"))
+    base::stop(out)
+  if(out$visible)
+    out$value
+  else
+    invisible(out$value)
+}
+
+
+#' @rdname eval_fork
+#' @export
 eval_fork <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err = stderr(),
                       timeout = 0, priority = NULL, uid = NULL, gid = NULL, rlimits = NULL){
   # Convert TRUE or filepath into connection objects
@@ -83,48 +126,6 @@ eval_fork <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err 
   clenv <- force(parent.frame())
   clexpr <- substitute(expr)
   eval_fork_internal(clexpr, clenv, tmp, timeout, outfun, errfun, priority, uid, gid, rlimits)
-}
-
-#' @rdname eval_fork
-#' @export
-#' @importFrom grDevices pdf dev.cur dev.off
-#' @param device graphics device to use in the fork, see [dev.new()]
-#' @param rlimits named vector/list with rlimit values, for example: `c(cpu = 60, fsize = 1e6)`.
-#' @param uid evaluate as given user (uid or name). See [unix::setuid()], only for root.
-#' @param gid evaluate as given group (gid or name). See [unix::setgid()] only for root.
-#' @param priority (integer) priority of the child process. High value is low priority.
-#' Non root user may only raise this value (decrease priority)
-#' @param profile AppArmor profile, see `RAppArmor::aa_change_profile()`.
-#' Requires the `RAppArmor` package (Debian/Ubuntu only)
-eval_safe <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err = stderr(),
-                      timeout = 0, priority = NULL, uid = NULL, gid = NULL, rlimits = NULL,
-                      profile = NULL, device = pdf){
-  orig_expr <- substitute(expr)
-  out <- eval_fork(expr = tryCatch({
-    if(length(device))
-      options(device = device)
-    if(length(profile)){
-      tryCatch(check_apparmor(), error = function(e){
-        warning("You can only use the 'profile' parameter when RAppArmor is installed")
-        stop(e)
-      })
-      RAppArmor::aa_change_profile(profile)
-    }
-    while(dev.cur() > 1) dev.off()
-    options(menu.graphics = FALSE)
-    withVisible(eval(orig_expr, parent.frame()))
-  }, error = function(e){
-    old_class <- attr(e, "class")
-    structure(e, class = c(old_class, "eval_fork_error"))
-  }, finally = substitute(while(dev.cur() > 1) dev.off())),
-  tmp = tmp, timeout = timeout, std_out = std_out, std_err = std_err, priority = priority,
-  uid = uid, gid = gid, rlimits = rlimits)
-  if(inherits(out, "eval_fork_error"))
-    base::stop(out)
-  if(out$visible)
-    out$value
-  else
-    invisible(out$value)
 }
 
 #' @useDynLib sys R_eval_fork
