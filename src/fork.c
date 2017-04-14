@@ -14,8 +14,6 @@
 #include <sys/resource.h>
 
 static const int R_DefaultSerializeVersion = 2;
-static int out = STDOUT_FILENO;
-static int err = STDERR_FILENO;
 
 #define r 0
 #define w 1
@@ -33,11 +31,6 @@ extern void check_interrupt_fn(void *dummy);
 extern int pending_interrupt();
 extern int wait_for_action2(int fd1, int fd2);
 extern void print_output(int pipe_out[2], SEXP fun);
-
-//output callbacks
-void write_out_ex(const char * buf, int size, int otype){
-  warn_if(write(otype ? err : out, buf, size), "problem writing back to std_out / std_err");
-}
 
 static int wait_with_timeout(int fd, int ms){
   short events = POLLIN | POLLERR | POLLHUP;
@@ -107,15 +100,15 @@ void Fake_Flush(){
 }
 
 //within the forked process, so not call parent console
-void prepare_fork(const char * tmpdir){
+void prepare_fork(const char * tmpdir, int fd_out, int fd_err){
 #ifdef SYS_BUILD_SAFE
-  R_Outputfile = NULL;
-  R_Consolefile = NULL;
+  R_Outputfile = fdopen(fd_out, "wb");
+  R_Consolefile = fdopen(fd_err, "wb");;
+  ptr_R_WriteConsole = NULL;
+  ptr_R_WriteConsoleEx = NULL;
   ptr_R_ResetConsole = Fake_Flush;
   ptr_R_FlushConsole = Fake_Flush;
   ptr_R_ReadConsole = Fake_ReadConsole;
-  ptr_R_WriteConsole = NULL;
-  ptr_R_WriteConsoleEx = write_out_ex;
   R_isForkedChild = 1;
   R_Interactive = 0;
   R_TempDir = strdup(tmpdir);
@@ -202,9 +195,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
 #endif
 
     //this is the hacky stuff
-    out = pipe_out[w];
-    err = pipe_err[w];
-    prepare_fork(CHAR(STRING_ELT(subtmp, 0)));
+    prepare_fork(CHAR(STRING_ELT(subtmp, 0)), pipe_out[w], pipe_err[w]);
 
     //set process priority (before changing uid)
     if(Rf_length(priority))
