@@ -140,11 +140,11 @@ static SEXP unserialize_from_pipe(int results[2]){
 }
 
 #ifndef RLIMIT_NPROC
-#define RLIMIT_NPROC NA_INTEGER
+#define RLIMIT_NPROC -1
 #endif
 
 #ifndef RLIMIT_MEMLOCK
-#define RLIMIT_MEMLOCK NA_INTEGER
+#define RLIMIT_MEMLOCK -1
 #endif
 
 // Order should match the R function
@@ -170,7 +170,7 @@ void set_process_rlimits(SEXP limitvec){
   for(int i = 0; i < len; i++){
     int resource = rlimit_types[i];
     double val = REAL(limitvec)[i];
-    if(ISNA(resource) || ISNA(val))
+    if(resource > 0 || ISNA(val))
       continue;
     rlim_t rlim_val = val;
     //Rprintf("Setting %d to %d\n", resource,  rlim_val);
