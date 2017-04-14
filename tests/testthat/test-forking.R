@@ -156,12 +156,14 @@ test_that("stdout gets redirected to parent",{
   close(errcon)
 })
 
-test_that("tempdir gets set", {
+test_that("tempdir/interactivity", {
   skip_on_os("windows")
   skip_if_not(safe_build())
 
   subtmp <- eval_fork(tempdir())
   expect_equal(normalizePath(tempdir()), normalizePath(dirname(subtmp)))
   expect_true(grepl("^fork", basename(subtmp)))
+  expect_false(eval_fork(interactive()))
+  expect_equal(eval_safe(readline(), std_out = FALSE, std_err = FALSE), "")
 })
 
