@@ -13,6 +13,10 @@
 #include <sys/wait.h>
 #include <sys/resource.h>
 
+#ifdef HAVE_APPARMOR
+#include <sys/apparmor.h>
+#endif
+
 static const int R_DefaultSerializeVersion = 2;
 
 #define r 0
