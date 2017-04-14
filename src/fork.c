@@ -109,6 +109,8 @@ void Fake_Flush(){
 //within the forked process, so not call parent console
 void prepare_fork(const char * tmpdir){
 #ifdef SYS_BUILD_SAFE
+  R_Outputfile = NULL;
+  R_Consolefile = NULL;
   ptr_R_ResetConsole = Fake_Flush;
   ptr_R_FlushConsole = Fake_Flush;
   ptr_R_ReadConsole = Fake_ReadConsole;
