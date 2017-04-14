@@ -1,3 +1,16 @@
+#' Package config
+#'
+#' Shows which features are enabled in the package configuration.
+#'
+#' @export
+#' @examples sys_config()
+sys_config <- function(){
+  list(
+    safe = safe_build(),
+    apparmor = have_apparmor()
+  )
+}
+
 #' @useDynLib sys R_freeze
 freeze <- function(interrupt = TRUE){
   .Call(R_freeze, as.logical(interrupt))
