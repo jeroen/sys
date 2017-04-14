@@ -95,11 +95,11 @@ int Fake_ReadConsole(const char * a, unsigned char * b, int c, int d){
   return 0;
 }
 
-void R_Flush(){
+void My_R_Flush(){
 
 }
 
-void R_CleanUp (SA_TYPE saveact, int status, int RunLast){
+void My_R_CleanUp (SA_TYPE saveact, int status, int RunLast){
 #ifdef SYS_BUILD_SAFE
   R_RunExitFinalizers();
   Rf_KillAllDevices();
@@ -114,10 +114,10 @@ void prepare_fork(const char * tmpdir, int fd_out, int fd_err){
   R_Consolefile = fdopen(fd_err, "wb");
   ptr_R_WriteConsole = NULL;
   ptr_R_WriteConsoleEx = NULL;
-  ptr_R_ResetConsole = R_Flush;
-  ptr_R_FlushConsole = R_Flush;
+  ptr_R_ResetConsole = My_R_Flush;
+  ptr_R_FlushConsole = My_R_Flush;
   ptr_R_ReadConsole = Fake_ReadConsole;
-  ptr_R_CleanUp = R_CleanUp;
+  ptr_R_CleanUp = My_R_CleanUp;
   R_isForkedChild = 1;
   R_Interactive = 0;
   R_TempDir = strdup(tmpdir);
