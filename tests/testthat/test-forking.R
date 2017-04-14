@@ -7,6 +7,10 @@ test_that("eval_fork works", {
   expect_false(Sys.getpid() == eval_fork(Sys.getpid()))
   expect_equal(unix::getpid(), eval_fork(unix::getppid()))
 
+  # Priority
+  prio <- unix::getpriority()
+  expect_equal(eval_fork(unix::getpriority(), priority = prio + 1), prio + 1)
+
   # initiates RNG with a seed (needed below)
   rnorm(1)
 
@@ -22,6 +26,7 @@ test_that("eval_fork works", {
     expect_equal(pi, eval_fork(pi))
   }
 })
+
 
 test_that("eval_fork gives errors", {
   skip_on_os("windows")
@@ -136,6 +141,14 @@ test_that("scope environment is correct", {
   })()
 })
 
+test_that("rlimits apply in eval_fork", {
+  skip_on_os("windows")
+  if(unix::rlimit_cpu()$max > 100)
+    expect_equal(eval_fork(unix::rlimit_cpu()$max, rlimits = c(cpu = 100, data = 1e7)), 100)
+  if(unix::rlimit_data()$max > 1e7)
+    expect_equal(eval_fork(unix::rlimit_data()$max, rlimits = c(cpu = 100, data = 1e7)), 1e7)
+})
+
 test_that("stdout gets redirected to parent",{
   skip_on_os("windows")
   skip_if_not(safe_build())
@@ -168,4 +181,3 @@ test_that("tempdir/interactivity", {
   expect_false(eval_fork(interactive()))
   expect_equal(eval_safe(readline(), std_out = FALSE, std_err = FALSE), "")
 })
-

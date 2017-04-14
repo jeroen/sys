@@ -172,7 +172,7 @@ void set_process_rlimits(SEXP limitvec){
   for(int i = 0; i < len; i++){
     int resource = rlimit_types[i];
     double val = REAL(limitvec)[i];
-    if(resource > 0 || ISNA(val))
+    if(resource < 0 || ISNA(val))
       continue;
     rlim_t rlim_val = val;
     //Rprintf("Setting %d to %d\n", resource,  rlim_val);
