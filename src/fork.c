@@ -123,14 +123,6 @@ void prepare_fork(const char * tmpdir){
 #endif
 }
 
-SEXP R_safe_build(){
-#ifdef SYS_BUILD_SAFE
-  return ScalarLogical(TRUE);
-#else
-  return ScalarLogical(FALSE);
-#endif
-}
-
 static SEXP unserialize_from_pipe(int results[2]){
   //unserialize stream
   struct R_inpstream_st stream;
