@@ -7,9 +7,9 @@ test_that("eval_fork works", {
   expect_false(Sys.getpid() == eval_fork(Sys.getpid()))
   expect_equal(unix::getpid(), eval_fork(unix::getppid()))
 
-  # Priority
-  prio <- unix::getpriority()
-  expect_equal(eval_fork(unix::getpriority(), priority = prio + 1), prio + 1)
+  # Priority (requires unix > 1.2)
+  # prio <- unix::getpriority()
+  # expect_equal(eval_fork(unix::getpriority(), priority = prio + 1), prio + 1)
 
   # initiates RNG with a seed (needed below)
   rnorm(1)
