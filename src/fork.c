@@ -198,6 +198,12 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     //prevents signals from being propagated to fork
     setpgid(0, 0);
 
+    //close read pipe
+    close(results[r]);
+
+    //This breaks parallel! See issue #11
+    safe_close(STDIN_FILENO);
+
     //Linux only: commit suicide when parent dies
 #ifdef PR_SET_PDEATHSIG
     prctl(PR_SET_PDEATHSIG, SIGKILL);
@@ -218,12 +224,6 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
       bail_if(setuid(Rf_asInteger(gid)), "setuid()");
     if(Rf_length(uid))
       bail_if(setgid(Rf_asInteger(uid)), "setgid()");
-
-    //close read pipe
-    close(results[r]);
-
-    //This breaks parallel! See issue #11
-    safe_close(STDIN_FILENO);
 
     //execute
     fail = 99; //not using this yet
