@@ -1,4 +1,4 @@
-OBJECTS = win32/exec.o init.o freeze.o
+OBJECTS = win32/exec.o util.o
 
 all: clean
 
