@@ -28,6 +28,14 @@ SEXP R_safe_build(){
 #endif
 }
 
+SEXP R_have_apparmor(){
+#ifdef HAVE_APPARMOR
+  return ScalarLogical(TRUE);
+#else
+  return ScalarLogical(FALSE);
+#endif
+}
+
 SEXP R_set_tempdir(SEXP path){
   const char * tmpdir = CHAR(STRING_ELT(path, 0));
 #ifdef SYS_BUILD_SAFE

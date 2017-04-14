@@ -182,7 +182,7 @@ void set_process_rlimits(SEXP limitvec){
 }
 
 SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SEXP errfun,
-                 SEXP priority, SEXP uid, SEXP gid, SEXP limitvec){
+                 SEXP priority, SEXP uid, SEXP gid, SEXP limitvec, SEXP profile){
   int results[2];
   int pipe_out[2];
   int pipe_err[2];
@@ -224,6 +224,15 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
       bail_if(setuid(Rf_asInteger(gid)), "setuid()");
     if(Rf_length(uid))
       bail_if(setgid(Rf_asInteger(uid)), "setgid()");
+
+    if(Rf_length(profile)){
+      const char * profstr = CHAR(STRING_ELT(profile, 0));
+#ifdef HAVE_APPARMOR
+      bail_if(aa_change_profile (profstr) < 0, "aa_change_profile()");
+#else
+      Rf_error("Cannot set profile = %s: system does not have AppArmor support", profstr);
+#endif
+    }
 
     //execute
     fail = 99; //not using this yet

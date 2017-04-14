@@ -11,7 +11,7 @@ eval_safe(expr, tmp = tempfile("fork"), std_out = stdout(),
 
 eval_fork(expr, tmp = tempfile("fork"), std_out = stdout(),
   std_err = stderr(), timeout = 0, priority = NULL, uid = NULL,
-  gid = NULL, rlimits = NULL)
+  gid = NULL, rlimits = NULL, profile = NULL)
 }
 \arguments{
 \item{expr}{expression to evaluate}

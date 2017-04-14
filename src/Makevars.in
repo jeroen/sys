@@ -1,0 +1,7 @@
+PKG_CPPFLAGS=@cflags@ -DSYS_BUILD_SAFE#$(_R_CHECK_CODE_USAGE_VIA_NAMESPACES_)
+PKG_LIBS=@libs@
+
+all: clean
+
+clean:
+	rm -f $(SHLIB) $(OBJECTS)
