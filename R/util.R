@@ -25,3 +25,17 @@ safe_build <- function(){
 have_apparmor <- function(){
   .Call(R_have_apparmor)
 }
+
+#' @useDynLib sys R_set_tempdir
+set_tempdir <- function(path){
+  path <- normalizePath(path)
+  if(!file.exists(path))
+    dir.create(path)
+  .Call(R_set_tempdir, path)
+}
+
+#' @useDynLib sys R_set_interactive
+set_interactive <- function(set){
+  stopifnot(is.logical(set))
+  .Call(R_set_interactive, set)
+}

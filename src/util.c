@@ -1,6 +1,7 @@
 #include <Rinternals.h>
-#include <R_ext/Rdynload.h>
+#include <Rinterface.h>
 #include <Rembedded.h>
+#include <R_ext/Rdynload.h>
 #include <string.h>
 
 extern int pending_interrupt();
@@ -37,11 +38,20 @@ SEXP R_have_apparmor(){
 }
 
 SEXP R_set_tempdir(SEXP path){
-  const char * tmpdir = CHAR(STRING_ELT(path, 0));
 #ifdef SYS_BUILD_SAFE
+  const char * tmpdir = CHAR(STRING_ELT(path, 0));
   R_TempDir = strdup(tmpdir);
 #else
   Rf_error("Cannot set tempdir(), sys has been built without SYS_BUILD_SAFE");
 #endif
   return path;
+}
+
+SEXP R_set_interactive(SEXP set){
+#ifdef SYS_BUILD_SAFE
+  R_Interactive = asLogical(set);
+#else
+  Rf_error("Cannot set interactive(), sys has been built without SYS_BUILD_SAFE");
+#endif
+  return ScalarLogical(R_Interactive);
 }
