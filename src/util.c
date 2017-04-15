@@ -46,9 +46,9 @@ SEXP R_set_tempdir(SEXP path){
   return path;
 }
 
+extern Rboolean R_Interactive;
 SEXP R_set_interactive(SEXP set){
 #ifdef SYS_BUILD_SAFE
-  extern Rboolean R_Interactive;
   R_Interactive = asLogical(set);
 #else
   Rf_error("Cannot set interactive(), sys has been built without SYS_BUILD_SAFE");
