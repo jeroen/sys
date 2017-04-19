@@ -9,12 +9,13 @@ PKG_TEST_HEADER="<sys/apparmor.h>"
 PKG_LIBS="-lapparmor"
 
 # Linux Kernel without AppArmor
+UNAME=`uname`
 if [ ! -e "/sys/module/apparmor" ] || [ "$NO_APPARMOR" ]; then
-  echo "Building without apparmor ($OSTYPE)"
+  echo "Building without AppArmor ($UNAME)"
   sed -e "s|@cflags@||" -e "s|@libs@||" src/Makevars.in > src/Makevars
   exit 0
 else
-  echo "Building with AppArmor ($OSTYPE)"
+  echo "Building with AppArmor ($UNAME)"
 fi
 
 #Try pkg-config
