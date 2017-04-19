@@ -49,9 +49,10 @@ in additional R code to handle errors and graphics.
 }
 \details{
 Some programs such as \code{Java} are not fork-safe and cannot be called from within a
-forked process. Moreover on MacOS software calling \code{CoreFoundation} functionality
-might crash. Unfortunately this includes \code{libcurl} which has been build against OSX
-native SecureTransport implementation on OSX rather than OpenSSL.
+forked process if they have already been loaded in the main process. On MacOS any
+software calling \code{CoreFoundation} functionality might crash within the fork. This
+includes \code{libcurl} which has been built on OSX against native SecureTransport rather
+than OpenSSL for https connections. The same limitations hold for e.g. \code{\link[parallel:mcparallel]{parallel::mcparallel()}}.
 }
 \examples{
 #Only works on Unix

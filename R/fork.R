@@ -5,9 +5,10 @@
 #' in additional R code to handle errors and graphics.
 #'
 #' Some programs such as `Java` are not fork-safe and cannot be called from within a
-#' forked process. Moreover on MacOS software calling `CoreFoundation` functionality
-#' might crash. Unfortunately this includes `libcurl` which has been build against OSX
-#' native SecureTransport implementation on OSX rather than OpenSSL.
+#' forked process if they have already been loaded in the main process. On MacOS any
+#' software calling `CoreFoundation` functionality might crash within the fork. This
+#' includes `libcurl` which has been built on OSX against native SecureTransport rather
+#' than OpenSSL for https connections. The same limitations hold for e.g. [parallel::mcparallel()].
 #'
 #' @export
 #' @rdname eval_fork
