@@ -10,7 +10,7 @@ PKG_LIBS="-lapparmor"
 
 # Linux Kernel without AppArmor
 UNAME=`uname`
-if [ ! -e "/sys/module/apparmor" ] || [ "$NO_APPARMOR" ]; then
+if [ ! -d "/sys/module/apparmor" ] || [ "$NO_APPARMOR" ]; then
   echo "Building without AppArmor ($UNAME)"
   sed -e "s|@cflags@||" -e "s|@libs@||" src/Makevars.in > src/Makevars
   exit 0
