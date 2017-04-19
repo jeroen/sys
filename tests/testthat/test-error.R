@@ -9,8 +9,8 @@ test_that("catching execution errors", {
   args <- switch(sysname,
      windows = c("-n 2", "localhost"),
      darwin = c("-t2", "localhost"),
-     linux = c("-c2", "localhost"),
-     sunos = c("-s", "localhost", "64", "2")
+     sunos = c("-s", "localhost", "64", "2"),
+     c("-c2", "localhost") #linux/default
   )
 
   # Run ping
