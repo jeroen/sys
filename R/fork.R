@@ -1,8 +1,13 @@
 #' Safe Evaluation
 #'
-#' Evaluates an expression in a temporary fork so that it has no side effects on the main
-#' R session. For [eval_safe()] the expression is wrapped in additional R code to deal with
-#' errors and graphics devices (recommended).
+#' Evaluates an expression in a temporary fork and returns the value without any
+#' side effects on the main R session. For [eval_safe()] the expression is wrapped
+#' in additional R code to handle errors and graphics.
+#'
+#' Some programs such as `Java` are not fork-safe and cannot be called from within a
+#' forked process. Moreover on MacOS software calling `CoreFoundation` functionality
+#' might crash. Unfortunately this includes `libcurl` which has been build against OSX
+#' native SecureTransport implementation on OSX rather than OpenSSL.
 #'
 #' @export
 #' @rdname eval_fork

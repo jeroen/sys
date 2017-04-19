@@ -43,9 +43,15 @@ Requires the \code{RAppArmor} package (Debian/Ubuntu only)}
 \item{device}{graphics device to use in the fork, see \code{\link[=dev.new]{dev.new()}}}
 }
 \description{
-Evaluates an expression in a temporary fork so that it has no side effects on the main
-R session. For \code{\link[=eval_safe]{eval_safe()}} the expression is wrapped in additional R code to deal with
-errors and graphics devices (recommended).
+Evaluates an expression in a temporary fork and returns the value without any
+side effects on the main R session. For \code{\link[=eval_safe]{eval_safe()}} the expression is wrapped
+in additional R code to handle errors and graphics.
+}
+\details{
+Some programs such as \code{Java} are not fork-safe and cannot be called from within a
+forked process. Moreover on MacOS software calling \code{CoreFoundation} functionality
+might crash. Unfortunately this includes \code{libcurl} which has been build against OSX
+native SecureTransport implementation on OSX rather than OpenSSL.
 }
 \examples{
 #Only works on Unix
