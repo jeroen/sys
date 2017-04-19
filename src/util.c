@@ -3,7 +3,41 @@
 #include <R_ext/Rdynload.h>
 #include <string.h>
 
+//Define in exec.c
+extern void bail_if(int err, const char * what);
 extern int pending_interrupt();
+
+//For: aa_change_profile()
+#ifdef HAVE_APPARMOR
+#include <sys/apparmor.h>
+#endif
+
+//For setuid(), rlimit, etc()
+#ifndef _WIN32
+#include <unistd.h>
+#include <sys/resource.h>
+
+// Order should match the R function
+#ifndef RLIMIT_NPROC
+#define RLIMIT_NPROC -1
+#endif
+
+#ifndef RLIMIT_MEMLOCK
+#define RLIMIT_MEMLOCK -1
+#endif
+
+static int rlimit_types[9] = {
+  RLIMIT_AS, //0
+  RLIMIT_CORE, //1
+  RLIMIT_CPU, //2
+  RLIMIT_DATA, //3
+  RLIMIT_FSIZE, //4
+  RLIMIT_MEMLOCK, //5
+  RLIMIT_NOFILE, //6
+  RLIMIT_NPROC, //7
+  RLIMIT_STACK, //8
+};
+#endif //WIN32
 
 SEXP R_freeze(SEXP interrupt) {
   int loop = 1;
@@ -54,4 +88,57 @@ SEXP R_set_interactive(SEXP set){
   Rf_error("Cannot set interactive(), sys has been built without SYS_BUILD_SAFE");
 #endif
   return set;
+}
+
+/*** Only on Debian/Ubuntu systems ***/
+SEXP R_aa_change_profile(SEXP profile){
+#ifdef HAVE_APPARMOR
+  const char * profstr = CHAR(STRING_ELT(profile, 0));
+  bail_if(aa_change_profile (profstr) < 0, "aa_change_profile()");
+#endif
+  return R_NilValue;
+}
+
+/*** Below are UNIX only tools ***/
+SEXP R_setuid(SEXP uid){
+#ifndef WIN32
+  bail_if(setuid(Rf_asInteger(uid)), "setuid()");
+#endif
+  return R_NilValue;
+}
+
+SEXP R_setgid(SEXP gid){
+#ifndef WIN32
+  bail_if(setgid(Rf_asInteger(gid)), "setgid()");
+#endif
+  return R_NilValue;
+}
+
+SEXP R_set_priority(SEXP priority){
+#ifndef WIN32
+  bail_if(setpriority(PRIO_PROCESS, 0, Rf_asInteger(priority)) < 0, "setpriority()");
+#endif
+  return R_NilValue;
+}
+
+//VECTOR of length n;
+SEXP R_set_rlimits(SEXP limitvec){
+#ifndef WIN32
+  if(!Rf_isNumeric(limitvec))
+    Rf_error("limitvec is not numeric");
+  size_t len = sizeof(rlimit_types)/sizeof(rlimit_types[0]);
+  if(Rf_length(limitvec) != len)
+    Rf_error("limitvec wrong size");
+  for(int i = 0; i < len; i++){
+    int resource = rlimit_types[i];
+    double val = REAL(limitvec)[i];
+    if(resource < 0 || ISNA(val))
+      continue;
+    rlim_t rlim_val = val;
+    //Rprintf("Setting %d to %d\n", resource,  rlim_val);
+    struct rlimit lim = {rlim_val, rlim_val};
+    bail_if(setrlimit(resource, &lim) < 0, "setrlimit()");
+  }
+#endif
+  return R_NilValue;
 }

@@ -8,8 +8,8 @@ test_that("eval_fork works", {
   expect_equal(unix::getpid(), eval_fork(unix::getppid()))
 
   # Priority (requires unix > 1.2)
-  # prio <- unix::getpriority()
-  # expect_equal(eval_fork(unix::getpriority(), priority = prio + 1), prio + 1)
+  prio <- unix::getpriority()
+  expect_equal(eval_safe(unix::getpriority(), priority = prio + 1), prio + 1)
 
   # initiates RNG with a seed (needed below)
   rnorm(1)
@@ -146,12 +146,18 @@ test_that("scope environment is correct", {
   })()
 })
 
-test_that("rlimits apply in eval_fork", {
+test_that("rlimits apply in eval_safe", {
   skip_on_os("windows")
   if(unix::rlimit_cpu()$max > 100)
-    expect_equal(eval_fork(unix::rlimit_cpu()$max, rlimits = c(cpu = 100, data = 1e7)), 100)
+    expect_equal(eval_safe(unix::rlimit_cpu()$max, rlimits = c(cpu = 100, data = 1e7)), 100)
   if(unix::rlimit_data()$max > 1e7)
-    expect_equal(eval_fork(unix::rlimit_data()$max, rlimits = c(cpu = 100, data = 1e7)), 1e7)
+    expect_equal(eval_safe(unix::rlimit_data()$max, rlimits = c(cpu = 100, data = 1e7)), 1e7)
+
+  # unsupported rlimit
+  expect_error(eval_safe(123, rlimits = c(foo = 123)), "foo")
+
+  # unnamed rlimits
+  expect_error(eval_safe(123, rlimits = list(123)), "rlimit")
 })
 
 test_that("stdout gets redirected to parent",{

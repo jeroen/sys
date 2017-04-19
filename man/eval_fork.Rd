@@ -10,8 +10,7 @@ eval_safe(expr, tmp = tempfile("fork"), std_out = stdout(),
   gid = NULL, rlimits = NULL, profile = NULL, device = pdf)
 
 eval_fork(expr, tmp = tempfile("fork"), std_out = stdout(),
-  std_err = stderr(), timeout = 0, priority = NULL, uid = NULL,
-  gid = NULL, rlimits = NULL, profile = NULL)
+  std_err = stderr(), timeout = 0)
 }
 \arguments{
 \item{expr}{expression to evaluate}

@@ -20,5 +20,6 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.0.1
 SystemRequirements: libapparmor-dev (optional, debian/ubuntu only)
 Suggests:
-    unix,
+    unix (>= 1.3),
     testthat
+Remotes: jeroen/unix

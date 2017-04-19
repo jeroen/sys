@@ -50,6 +50,16 @@ eval_safe <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err 
                       profile = NULL, device = pdf){
   orig_expr <- substitute(expr)
   out <- eval_fork(expr = tryCatch({
+    if(length(priority))
+      set_priority(priority)
+    if(length(rlimits))
+      set_rlimits(rlimits)
+    if(length(gid))
+      setgid(gid)
+    if(length(uid))
+      setuid(uid)
+    if(length(profile))
+      aa_change_profile(profile)
     if(length(device))
       options(device = device)
     while(dev.cur() > 1) dev.off()
@@ -59,8 +69,7 @@ eval_safe <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err 
     old_class <- attr(e, "class")
     structure(e, class = c(old_class, "eval_fork_error"))
   }, finally = substitute(while(dev.cur() > 1) dev.off())),
-  tmp = tmp, timeout = timeout, std_out = std_out, std_err = std_err, priority = priority,
-  uid = uid, gid = gid, rlimits = rlimits, profile = profile)
+  tmp = tmp, timeout = timeout, std_out = std_out, std_err = std_err)
   if(inherits(out, "eval_fork_error"))
     base::stop(out)
   if(out$visible)
@@ -72,8 +81,7 @@ eval_safe <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err 
 
 #' @rdname eval_fork
 #' @export
-eval_fork <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err = stderr(), timeout = 0,
-                      priority = NULL, uid = NULL, gid = NULL, rlimits = NULL, profile = NULL){
+eval_fork <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err = stderr(), timeout = 0) {
   # Convert TRUE or filepath into connection objects
   std_out <- if(isTRUE(std_out) || identical(std_out, "")){
     stdout()
@@ -125,32 +133,20 @@ eval_fork <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err 
   clenv <- force(parent.frame())
   clexpr <- substitute(expr)
   eval_fork_internal(expr = clexpr, envir = clenv, tmp = tmp, timeout = timeout, outfun = outfun,
-    errfun = errfun, priority = priority, uid = uid, gid = gid, rlimits = rlimits, profile = profile)
+    errfun = errfun)
 }
 
 #' @useDynLib sys R_eval_fork
-eval_fork_internal <- function(expr, envir, tmp, timeout, outfun, errfun, priority,
-                               uid, gid, rlimits, profile){
+eval_fork_internal <- function(expr, envir, tmp, timeout, outfun, errfun){
   if(!file.exists(tmp))
     dir.create(tmp)
-  if(length(uid))
-    stopifnot(is.numeric(uid))
-  if(length(gid))
-    stopifnot(is.numeric(gid))
-  if(length(priority))
-    stopifnot(is.numeric(priority))
   if(length(timeout)){
     stopifnot(is.numeric(timeout))
   } else {
-    timeout <- 0
+    timeout <- as.numeric(0)
   }
-  uid <- as.integer(uid)
-  gid <- as.integer(gid)
-  priority <- as.integer(priority)
-  rlimits <- do.call(parse_limits, as.list(rlimits))
-  timeout <- as.numeric(timeout)
   tmp <- normalizePath(tmp)
-  .Call(R_eval_fork, expr, envir, tmp, timeout, outfun, errfun, priority, uid, gid, rlimits, profile)
+  .Call(R_eval_fork, expr, envir, tmp, timeout, outfun, errfun)
 }
 
 # Limits MUST be named
@@ -162,4 +158,3 @@ parse_limits <- function(..., as = NA, core = NA, cpu = NA, data = NA, fsize = N
   out <- as.numeric(c(as, core, cpu, data, fsize, memlock, nofile, nproc, stack))
   structure(out, names = names(formals(sys.function()))[-1])
 }
-

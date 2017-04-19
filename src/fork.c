@@ -11,11 +11,6 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/wait.h>
-#include <sys/resource.h>
-
-#ifdef HAVE_APPARMOR
-#include <sys/apparmor.h>
-#endif
 
 static const int R_DefaultSerializeVersion = 2;
 
@@ -43,12 +38,6 @@ static int wait_with_timeout(int fd, int ms){
     return ufds.revents;
   return 0;
 }
-
-/*
-static int is_alive(pid_t pid){
-return !waitpid(pid, NULL, WNOHANG);
-}
-*/
 
 /* Callback functions to serialize/unserialize via the pipe */
 static void OutBytesCB(R_outpstream_t stream, void * raw, int size){
@@ -145,48 +134,7 @@ static SEXP unserialize_from_pipe(int results[2]){
   return R_Unserialize(&stream);
 }
 
-#ifndef RLIMIT_NPROC
-#define RLIMIT_NPROC -1
-#endif
-
-#ifndef RLIMIT_MEMLOCK
-#define RLIMIT_MEMLOCK -1
-#endif
-
-// Order should match the R function
-static int rlimit_types[9] = {
-  RLIMIT_AS, //0
-  RLIMIT_CORE, //1
-  RLIMIT_CPU, //2
-  RLIMIT_DATA, //3
-  RLIMIT_FSIZE, //4
-  RLIMIT_MEMLOCK, //5
-  RLIMIT_NOFILE, //6
-  RLIMIT_NPROC, //7
-  RLIMIT_STACK, //8
-};
-
-//VECTOR of length n;
-void set_process_rlimits(SEXP limitvec){
-  if(!Rf_isNumeric(limitvec))
-    Rf_error("limitvec is not numeric");
-  size_t len = sizeof(rlimit_types)/sizeof(rlimit_types[0]);
-  if(Rf_length(limitvec) != len)
-    Rf_error("limitvec wrong size");
-  for(int i = 0; i < len; i++){
-    int resource = rlimit_types[i];
-    double val = REAL(limitvec)[i];
-    if(resource < 0 || ISNA(val))
-      continue;
-    rlim_t rlim_val = val;
-    //Rprintf("Setting %d to %d\n", resource,  rlim_val);
-    struct rlimit lim = {rlim_val, rlim_val};
-    bail_if(setrlimit(resource, &lim) < 0, "setrlimit()");
-  }
-}
-
-SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SEXP errfun,
-                 SEXP priority, SEXP uid, SEXP gid, SEXP limitvec, SEXP profile){
+SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SEXP errfun){
   int results[2];
   int pipe_out[2];
   int pipe_err[2];
@@ -215,28 +163,6 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
 
     //this is the hacky stuff
     prepare_fork(CHAR(STRING_ELT(subtmp, 0)), pipe_out[w], pipe_err[w]);
-
-    //set process priority (before changing uid)
-    if(Rf_length(priority))
-      bail_if(setpriority(PRIO_PROCESS, 0, Rf_asInteger(priority)) < 0, "setpriority()");
-
-    //set rlimits (before changing uid)
-    set_process_rlimits(limitvec);
-
-    //set user and group ID (group first!)
-    if(Rf_length(gid))
-      bail_if(setuid(Rf_asInteger(gid)), "setuid()");
-    if(Rf_length(uid))
-      bail_if(setgid(Rf_asInteger(uid)), "setgid()");
-
-    if(Rf_length(profile)){
-      const char * profstr = CHAR(STRING_ELT(profile, 0));
-#ifdef HAVE_APPARMOR
-      bail_if(aa_change_profile (profstr) < 0, "aa_change_profile()");
-#else
-      Rf_error("Cannot set profile = %s: system does not have AppArmor support", profstr);
-#endif
-    }
 
     //execute
     fail = 99; //not using this yet
