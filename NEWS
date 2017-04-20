@@ -1,7 +1,7 @@
 1.3
-  - Use AppArmor on Debian/Ubuntu in eval_fork()
-  - Do more inside fork to prevent corruption (disable )
-  - Expand eval_safe() and eval_fork() with more features
+  - Use AppArmor (required) on Debian/Ubuntu in eval_safe()
+  - Disable console and finalizers inside forked procs
+  - Add support for rlimits, priority, uid, gid and profile in eval_safe()
 
 1.2:
   - Windows: show informative system error messages on failures
