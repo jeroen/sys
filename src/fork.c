@@ -92,6 +92,7 @@ void My_R_Flush(){
 
 }
 
+/* do not wipe (shared) tempdir or run finalizers in forked process */
 void My_R_CleanUp (SA_TYPE saveact, int status, int RunLast){
 #ifdef SYS_BUILD_SAFE
   //R_RunExitFinalizers();
@@ -99,7 +100,7 @@ void My_R_CleanUp (SA_TYPE saveact, int status, int RunLast){
 #endif
 }
 
-//within the forked process, so not call parent console
+/* disables console, finalizers, interactivity inside forked procs */
 void prepare_fork(const char * tmpdir, int fd_out, int fd_err){
 #ifdef SYS_BUILD_SAFE
   //either set R_Outputfile+R_Consolefile OR ptr_R_WriteConsoleEx()
