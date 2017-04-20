@@ -51,7 +51,7 @@ Some programs such as \code{Java} are not fork-safe and cannot be called from wi
 forked process if they have already been loaded in the main process. On MacOS any
 software calling \code{CoreFoundation} functionality might crash within the fork. This
 includes \code{libcurl} which has been built on OSX against native SecureTransport rather
-than OpenSSL for https connections. The same limitations hold for e.g. \code{\link[parallel:mcparallel]{parallel::mcparallel()}}.
+than OpenSSL for https connections. The same limitations hold for e.g. \code{parallel::mcparallel()}.
 }
 \examples{
 #Only works on Unix

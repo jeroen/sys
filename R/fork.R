@@ -8,7 +8,7 @@
 #' forked process if they have already been loaded in the main process. On MacOS any
 #' software calling `CoreFoundation` functionality might crash within the fork. This
 #' includes `libcurl` which has been built on OSX against native SecureTransport rather
-#' than OpenSSL for https connections. The same limitations hold for e.g. [parallel::mcparallel()].
+#' than OpenSSL for https connections. The same limitations hold for e.g. `parallel::mcparallel()`.
 #'
 #' @export
 #' @rdname eval_fork
