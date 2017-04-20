@@ -1,4 +1,6 @@
 1.3
+  - Use AppArmor on Debian/Ubuntu in eval_fork()
+  - Do more inside fork to prevent corruption (disable )
   - Expand eval_safe() and eval_fork() with more features
 
 1.2:
