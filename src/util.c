@@ -17,7 +17,7 @@ extern int pending_interrupt();
 #include <unistd.h>
 #include <sys/resource.h>
 
-// Order should match the R function
+// Missing on Solaris
 #ifndef RLIMIT_NPROC
 #define RLIMIT_NPROC -1
 #endif
@@ -26,10 +26,12 @@ extern int pending_interrupt();
 #define RLIMIT_MEMLOCK -1
 #endif
 
+// Missing on OpenBSD
 #ifndef RLIMIT_AS
 #define RLIMIT_AS RLIMIT_DATA
 #endif
 
+// Order should match the R function
 static int rlimit_types[9] = {
   RLIMIT_AS, //0
   RLIMIT_CORE, //1
