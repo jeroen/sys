@@ -26,6 +26,10 @@ extern int pending_interrupt();
 #define RLIMIT_MEMLOCK -1
 #endif
 
+#ifndef RLIMIT_AS
+#define RLIMIT_AS RLIMIT_DATA
+#endif
+
 static int rlimit_types[9] = {
   RLIMIT_AS, //0
   RLIMIT_CORE, //1
