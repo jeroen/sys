@@ -142,6 +142,7 @@ eval_fork_internal <- function(expr, envir, tmp, timeout, outfun, errfun){
     dir.create(tmp)
   if(length(timeout)){
     stopifnot(is.numeric(timeout))
+    timeout <- as.double(timeout)
   } else {
     timeout <- as.numeric(0)
   }

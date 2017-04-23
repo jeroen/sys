@@ -1,3 +1,7 @@
+1.4
+  - Fix bug when 'timeout' was given as integer instead of double
+  - Workaround undefined RLIMIT_AS on OpenBSD
+
 1.3
   - Use AppArmor (required) on Debian/Ubuntu in eval_safe()
   - Disable console and finalizers inside forked procs
