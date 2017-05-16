@@ -13,7 +13,7 @@
 #' @export
 #' @rdname eval_fork
 #' @inheritParams exec
-#' @importFrom grDevices pdf dev.cur dev.off
+#' @importFrom grDevices pdf graphics.off
 #' @param expr expression to evaluate
 #' @param tmp the value of [tempdir()] inside the forked process
 #' @param timeout maximum time in seconds to allow for call to return
@@ -62,13 +62,13 @@ eval_safe <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err 
       aa_change_profile(profile)
     if(length(device))
       options(device = device)
-    while(dev.cur() > 1) dev.off()
+    graphics.off()
     options(menu.graphics = FALSE)
     withVisible(eval(orig_expr, parent.frame()))
   }, error = function(e){
     old_class <- attr(e, "class")
     structure(e, class = c(old_class, "eval_fork_error"))
-  }, finally = substitute(while(dev.cur() > 1) dev.off())),
+  }, finally = substitute(graphics.off())),
   tmp = tmp, timeout = timeout, std_out = std_out, std_err = std_err)
   if(inherits(out, "eval_fork_error"))
     base::stop(out)
