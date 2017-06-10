@@ -8,6 +8,10 @@
 #include <errno.h>
 #include <poll.h>
 
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+
 #define r 0
 #define w 1
 #define waitms 200
@@ -153,7 +157,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     }
 
     //prevents signals from being propagated to fork
-    setpgid(0, 0);
+    //setpgid(0, 0);
 
     //Linux only: suicide when parent dies
 #ifdef PR_SET_PDEATHSIG
