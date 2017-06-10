@@ -12,6 +12,10 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+
 static const int R_DefaultSerializeVersion = 2;
 
 #define r 0
@@ -136,8 +140,8 @@ static SEXP unserialize_from_pipe(int results[2]){
 }
 
 void parent_has_died(int signum) {
-  kill(0, SIGKILL);
-  raise(SIGKILL);
+  kill(0, SIGKILL); // kills process group
+  raise(SIGKILL); // just to be sure
 }
 
 SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SEXP errfun){
