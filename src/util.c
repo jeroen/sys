@@ -3,6 +3,9 @@
 #include <R_ext/Rdynload.h>
 #include <string.h>
 
+//Because mkString() segfaulst for NULL
+#define make_string(x) x ? Rf_mkString(x) : ScalarString(NA_STRING)
+
 //Define in exec.c
 extern void bail_if(int err, const char * what);
 extern int pending_interrupt();
@@ -103,6 +106,26 @@ SEXP R_aa_change_profile(SEXP profile){
   bail_if(aa_change_profile (profstr) < 0, "aa_change_profile()");
 #endif
   return R_NilValue;
+}
+
+SEXP R_aa_is_enabled(){
+#ifndef HAVE_APPARMOR
+  return ScalarLogical(FALSE);
+#else
+  return ScalarLogical(aa_is_enabled());
+#endif //HAVE_APPARMOR
+}
+
+SEXP R_aa_getcon(){
+#ifndef HAVE_APPARMOR
+  return NULL;
+#else
+  char * con = NULL;
+  char * mode = NULL;
+  if(!aa_getcon (&con, &mode))
+    return R_NilValue;
+  return Rf_list2(make_string(con), make_string(mode));
+#endif //HAVE_APPARMOR
 }
 
 /*** Below are UNIX only tools ***/

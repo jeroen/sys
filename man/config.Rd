@@ -2,9 +2,12 @@
 % Please edit documentation in R/util.R
 \name{sys_config}
 \alias{sys_config}
+\alias{aa_config}
 \title{Package config}
 \usage{
 sys_config()
+
+aa_config()
 }
 \description{
 Shows which features are enabled in the package configuration.

@@ -3,11 +3,24 @@
 #' Shows which features are enabled in the package configuration.
 #'
 #' @export
+#' @rdname config
 #' @examples sys_config()
 sys_config <- function(){
   list(
     safe = safe_build(),
     apparmor = have_apparmor()
+  )
+}
+
+#' @rdname config
+#' @export
+aa_config <- function(){
+  status <- aa_getcon()
+  list(
+    compiled = have_apparmor(),
+    enabled = aa_is_enabled(),
+    con = status$con,
+    mode = status$mode
   )
 }
 
@@ -24,6 +37,16 @@ safe_build <- function(){
 #' @useDynLib sys R_have_apparmor
 have_apparmor <- function(){
   .Call(R_have_apparmor)
+}
+
+#' @useDynLib sys R_aa_is_enabled
+aa_is_enabled <- function(){
+  .Call(R_aa_is_enabled)
+}
+
+#' @useDynLib sys R_aa_getcon
+aa_getcon <- function(){
+  structure(.Call(R_aa_getcon), names = c("con", "mode"))
 }
 
 #' @useDynLib sys R_set_tempdir
