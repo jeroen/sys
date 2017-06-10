@@ -110,7 +110,7 @@ SEXP R_aa_change_profile(SEXP profile){
 
 SEXP R_aa_is_enabled(){
 #ifndef HAVE_APPARMOR
-  return ScalarLogical(FALSE);
+  return R_NilValue;
 #else
   return ScalarLogical(aa_is_enabled());
 #endif //HAVE_APPARMOR
@@ -118,7 +118,7 @@ SEXP R_aa_is_enabled(){
 
 SEXP R_aa_getcon(){
 #ifndef HAVE_APPARMOR
-  return NULL;
+  return R_NilValue;
 #else
   char * con = NULL;
   char * mode = NULL;

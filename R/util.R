@@ -46,7 +46,10 @@ aa_is_enabled <- function(){
 
 #' @useDynLib sys R_aa_getcon
 aa_getcon <- function(){
-  structure(.Call(R_aa_getcon), names = c("con", "mode"))
+  out <- .Call(R_aa_getcon)
+  if(!length(out))
+    return(out)
+  structure(out, names = c("con", "mode"))
 }
 
 #' @useDynLib sys R_set_tempdir
