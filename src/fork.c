@@ -135,6 +135,11 @@ static SEXP unserialize_from_pipe(int results[2]){
   return R_Unserialize(&stream);
 }
 
+void parent_has_died(int signum) {
+  kill(0, SIGKILL);
+  raise(SIGKILL);
+}
+
 SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SEXP errfun){
   int results[2];
   int pipe_out[2];
@@ -157,9 +162,10 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     //This breaks parallel! See issue #11
     safe_close(STDIN_FILENO);
 
-    //Linux only: commit suicide when parent dies
+    //Linux only: try to kill proccess group when parent dies
 #ifdef PR_SET_PDEATHSIG
-    prctl(PR_SET_PDEATHSIG, SIGKILL);
+    prctl(PR_SET_PDEATHSIG, SIGTERM);
+    signal(SIGTERM, parent_has_died);
 #endif
 
     //this is the hacky stuff
