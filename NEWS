@@ -3,6 +3,8 @@
   - Workaround undefined RLIMIT_AS on OpenBSD
   - Use graphics.off() instead of dev.off() to shut down all graphics devices
   - Added aa_config() to query apparmor status on supported platforms
+  - On Linux, eval_fork() now kills entire child process group when parent dies
+  - The exec() functions no longer change process group on OSX
 
 1.3
   - Use AppArmor (required) on Debian/Ubuntu in eval_safe()

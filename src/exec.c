@@ -19,6 +19,11 @@
 #define IS_TRUE(x) (Rf_isLogical(x) && Rf_length(x) && asLogical(x))
 #define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
 
+void kill_process_group(int signum) {
+  kill(0, SIGKILL); // kills process group
+  raise(SIGKILL); // just to be sure
+}
+
 /* prevent potential handlers from cleaning up exit codes */
 static void block_sigchld(){
   sigset_t block_sigchld;
@@ -156,13 +161,13 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
       }
     }
 
-    //prevents signals from being propagated to fork
-    //setpgid(0, 0);
-
-    //Linux only: suicide when parent dies
+    //Linux only: set pgid and commit suicide when parent dies
 #ifdef PR_SET_PDEATHSIG
-    prctl(PR_SET_PDEATHSIG, SIGKILL);
+    setpgid(0, 0);
+    prctl(PR_SET_PDEATHSIG, SIGTERM);
+    signal(SIGTERM, kill_process_group);
 #endif
+    //OSX: do NOT change pgid, so we receive signals from parent group
 
     // close STDIN for fork
     safe_close(STDIN_FILENO);

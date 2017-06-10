@@ -34,6 +34,7 @@ extern void check_interrupt_fn(void *dummy);
 extern int pending_interrupt();
 extern int wait_for_action2(int fd1, int fd2);
 extern void print_output(int pipe_out[2], SEXP fun);
+extern void kill_process_group(int signum);
 
 static int wait_with_timeout(int fd, int ms){
   short events = POLLIN | POLLERR | POLLHUP;
@@ -139,11 +140,6 @@ static SEXP unserialize_from_pipe(int results[2]){
   return R_Unserialize(&stream);
 }
 
-void parent_has_died(int signum) {
-  kill(0, SIGKILL); // kills process group
-  raise(SIGKILL); // just to be sure
-}
-
 SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SEXP errfun){
   int results[2];
   int pipe_out[2];
@@ -169,7 +165,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     //Linux only: try to kill proccess group when parent dies
 #ifdef PR_SET_PDEATHSIG
     prctl(PR_SET_PDEATHSIG, SIGTERM);
-    signal(SIGTERM, parent_has_died);
+    signal(SIGTERM, kill_process_group);
 #endif
 
     //this is the hacky stuff
