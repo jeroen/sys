@@ -161,9 +161,9 @@ SEXP R_set_rlimits(SEXP limitvec){
   for(int i = 0; i < len; i++){
     int resource = rlimit_types[i];
     double val = REAL(limitvec)[i];
-    if(resource < 0 || ISNA(val))
+    if(resource < 0 || val == 0 || ISNA(val))
       continue;
-    rlim_t rlim_val = val;
+    rlim_t rlim_val = R_finite(val) ? val : RLIM_INFINITY;
     //Rprintf("Setting %d to %d\n", resource,  rlim_val);
     struct rlimit lim = {rlim_val, rlim_val};
     bail_if(setrlimit(resource, &lim) < 0, "setrlimit()");
