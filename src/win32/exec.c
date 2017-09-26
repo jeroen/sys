@@ -165,10 +165,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
   //append args into full command line
   size_t max_len = 32768;
-  char argv[max_len + 1] = "";
+  char argv[32769] = "";
   for(int i = 0; i < Rf_length(args); i++){
-    size_t len = STRING_ELT(args, i));
-    if(Rf_length(len > max_len)
+    size_t len = Rf_length(STRING_ELT(args, i));
+    if(len > max_len)
       Rf_error("Command too long (max 32768)");
     strcat(argv, CHAR(STRING_ELT(args, i)));
     if(i < Rf_length(args) - 1)
