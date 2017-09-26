@@ -163,14 +163,20 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
     si.hStdError = fd(CHAR(STRING_ELT(errfun, 0)));
   }
 
-  //make command
-  const char * cmd = CHAR(STRING_ELT(command, 0));
-  char argv[MAX_PATH] = "";
+  //append args into full command line
+  size_t max_len = 32768;
+  char argv[max_len + 1] = "";
   for(int i = 0; i < Rf_length(args); i++){
+    size_t len = STRING_ELT(args, i));
+    if(Rf_length(len > max_len)
+      Rf_error("Command too long (max 32768)");
     strcat(argv, CHAR(STRING_ELT(args, i)));
-    strcat(argv, " ");
+    if(i < Rf_length(args) - 1)
+      strcat(argv, " ");
+    max_len = max_len - (len + 1);
   }
   PROCESS_INFORMATION pi = {0};
+  const char * cmd = CHAR(STRING_ELT(command, 0));
   if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED, NULL, NULL, &si, &pi))
     Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, formatError(GetLastError()));
 
