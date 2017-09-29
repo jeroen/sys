@@ -124,7 +124,11 @@ SEXP R_aa_getcon(){
   char * mode = NULL;
   if(!aa_getcon (&con, &mode))
     return R_NilValue;
-  return Rf_list2(make_string(con), make_string(mode));
+  SEXP out = PROTECT(allocVector(VECSXP, 2));
+  SET_VECTOR_ELT(out, 0, make_string(con));
+  SET_VECTOR_ELT(out, 1, make_string(mode));
+  UNPROTECT(1);
+  return out;
 #endif //HAVE_APPARMOR
 }
 
