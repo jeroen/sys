@@ -4,14 +4,10 @@ cache: packages
 matrix:
   include:
     - os: linux
-      dist: precise
-      sudo: required # weird problem with 'ping' in docker
-    - os: linux
-      dist: trusty
       env: R_CODECOV=true
-      sudo: required
+      sudo: required # weird problem with 'ping' in docker
     - os: osx
-      osx_image: xcode8.3
+      osx_image: xcode9.2
       latex: false
       env: _R_CHECK_FORCE_SUGGESTS_=FALSE
     - os: osx

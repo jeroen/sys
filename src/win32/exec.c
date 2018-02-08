@@ -177,7 +177,12 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   }
   PROCESS_INFORMATION pi = {0};
   const char * cmd = CHAR(STRING_ELT(command, 0));
-  if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED, NULL, NULL, &si, &pi))
+  DWORD dwCreationFlags =  CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED;
+  /* This will cause orphans unless we install a SIGBREAK handler on the child
+  if(!block)
+    dwCreationFlags |= CREATE_NEW_PROCESS_GROUP; //allows sending CTRL+BREAK
+  */
+  if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, dwCreationFlags, NULL, NULL, &si, &pi))
     Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, formatError(GetLastError()));
 
   //CloseHandle(pi.hThread);
@@ -251,4 +256,11 @@ SEXP R_exec_status(SEXP rpid, SEXP wait){
 
 SEXP R_eval_fork(SEXP x, ...){
   Rf_error("eval_fork not available on windows");
+}
+
+
+/* Windows does not allow sending CTRL_C_EVENT (SIGINT) to other processes */
+SEXP C_send_interrupt(SEXP pid){
+  bail_if(GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT , Rf_asInteger(pid)) == 0, "GenerateConsoleCtrlEvent");
+  return R_NilValue;
 }

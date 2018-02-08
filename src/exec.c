@@ -255,3 +255,8 @@ SEXP R_exec_status(SEXP rpid, SEXP wait){
   } while (asLogical(wait) && !pending_interrupt());
   return ScalarInteger(wstat);
 }
+
+SEXP C_send_interrupt(SEXP pid){
+  bail_if(kill(Rf_asInteger(pid), SIGINT), "kill");
+  return R_NilValue;
+}
