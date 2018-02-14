@@ -1,7 +1,7 @@
 Package: sys
 Type: Package
 Title: Portable System Utilities
-Version: 1.5
+Version: 1.5.9000
 Authors@R: c(
     person("Jeroen", "Ooms", , "jeroen@berkeley.edu", role = c("aut", "cre")),
     person("Gábor", "Csárdi", , "csardi.gabor@gmail.com", role = "ctb"))

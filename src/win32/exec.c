@@ -12,7 +12,6 @@
 #define IS_FALSE(x) (Rf_isLogical(x) && Rf_length(x) && !asLogical(x))
 
 /* copy from R source */
-
 const char *formatError(DWORD res){
   static char buf[1000], *p;
   FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -28,6 +27,8 @@ const char *formatError(DWORD res){
   return buf;
 }
 
+/* Copied from processx */
+int processx__make_program_args(SEXP, int, WCHAR **);
 
 /* check for system errors */
 void bail_if(int err, const char * what){
@@ -141,8 +142,8 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
 
-  STARTUPINFO si = {0};
-  si.cb = sizeof(STARTUPINFO);
+  STARTUPINFOW si = {0};
+  si.cb = sizeof(STARTUPINFOW);
   si.dwFlags |= STARTF_USESTDHANDLES;
   HANDLE pipe_out = NULL;
   HANDLE pipe_err = NULL;
@@ -165,16 +166,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 
   //append args into full command line
   size_t max_len = 32768;
-  char argv[32769] = "";
-  for(int i = 0; i < Rf_length(args); i++){
-    size_t len = Rf_length(STRING_ELT(args, i));
-    if(len > max_len)
-      Rf_error("Command too long (max 32768)");
-    strcat(argv, CHAR(STRING_ELT(args, i)));
-    if(i < Rf_length(args) - 1)
-      strcat(argv, " ");
-    max_len = max_len - (len + 1);
-  }
+  WCHAR buf[max_len];
+  WCHAR * argv = buf;
+  processx__make_program_args(args, 0, &argv);
   PROCESS_INFORMATION pi = {0};
   const char * cmd = CHAR(STRING_ELT(command, 0));
   DWORD dwCreationFlags =  CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED;
@@ -182,7 +176,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
   if(!block)
     dwCreationFlags |= CREATE_NEW_PROCESS_GROUP; //allows sending CTRL+BREAK
   */
-  if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, dwCreationFlags, NULL, NULL, &si, &pi))
+  if(!CreateProcessW(NULL, argv, &sa, &sa, TRUE, dwCreationFlags, NULL, NULL, &si, &pi))
     Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, formatError(GetLastError()));
 
   //CloseHandle(pi.hThread);
