@@ -12,6 +12,8 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 
+#include <RApiSerializeAPI.h>
+
 #ifdef __linux__
 #include <sys/prctl.h>
 #endif
@@ -58,7 +60,7 @@ static void OutBytesCB(R_outpstream_t stream, void * raw, int size){
 }
 
 static void InBytesCB(R_inpstream_t stream, void *buf, int length){
-  R_CheckUserInterrupt();
+  //R_CheckUserInterrupt();
   int * results = stream->data;
   bail_if(read(results[r], buf, length) < 0, "read from pipe");
 }
@@ -75,18 +77,13 @@ static int InCharCB(R_inpstream_t stream){
 }
 
 static void serialize_to_pipe(SEXP object, int results[2]){
-  //serialize output
-  struct R_outpstream_st stream;
-  stream.data = results;
-  stream.type = R_pstream_xdr_format;
-  stream.version = R_DefaultSerializeVersion;
-  stream.OutChar = OutCharCB;
-  stream.OutBytes = OutBytesCB;
-  stream.OutPersistHookFunc = NULL;
-  stream.OutPersistHookData = R_NilValue;
+  SEXP(*fun)(SEXP) =
+    (SEXP(*)(SEXP)) R_GetCCallable("RApiSerialize", "serializeToRaw");
+  SEXP bin = fun(object);
 
-  //TODO: this can raise an error so that the process never dies!
-  R_Serialize(object, &stream);
+  //Removing this makes it slow again????
+  Rprintf("Starting write of %d bytes\n", Rf_length(bin));
+  int written = write(results[w], RAW(bin), Rf_length(bin));
 }
 
 int Fake_ReadConsole(const char * a, unsigned char * b, int c, int d){
@@ -127,17 +124,25 @@ void prepare_fork(const char * tmpdir, int fd_out, int fd_err){
 }
 
 static SEXP unserialize_from_pipe(int results[2]){
-  //unserialize stream
-  struct R_inpstream_st stream;
-  stream.data = results;
-  stream.type = R_pstream_xdr_format;
-  stream.InPersistHookFunc = NULL;
-  stream.InPersistHookData = R_NilValue;
-  stream.InBytes = InBytesCB;
-  stream.InChar = InCharCB;
-
-  //TODO: this can raise an error!
-  return R_Unserialize(&stream);
+  SEXP(*fun)(SEXP) =
+    (SEXP(*)(SEXP)) R_GetCCallable("RApiSerialize", "unserializeFromRaw");
+  int buflen = 1e7;
+  int total = 0;
+  unsigned char * buf = malloc(buflen);
+  unsigned char * orig = buf;
+  ssize_t size = read(results[r], buf, buflen);
+  while(size > 0){
+    buf = buf + size;
+    buflen = buflen - size;
+    total = total + size;
+    size = read(results[r], buf, buflen);
+  }
+  SEXP out = PROTECT(allocVector(RAWSXP, total));
+  memcpy(RAW(out), orig, total);
+  free(orig);
+  SEXP res = fun(out);
+  UNPROTECT(1);
+  return res;
 }
 
 SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SEXP errfun){

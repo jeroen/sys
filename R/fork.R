@@ -14,6 +14,7 @@
 #' @rdname eval_fork
 #' @inheritParams exec
 #' @importFrom grDevices pdf graphics.off
+#' @importFrom RApiSerialize serializeToRaw
 #' @param expr expression to evaluate
 #' @param tmp the value of [tempdir()] inside the forked process
 #' @param timeout maximum time in seconds to allow for call to return

@@ -17,8 +17,10 @@ BugReports: https://github.com/jeroen/sys/issues
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 6.0.1
+RoxygenNote: 6.0.1.9000
 SystemRequirements: libapparmor-dev (optional, debian/ubuntu only)
 Suggests:
     unix (>= 1.3),
     testthat
+LinkingTo: RApiSerialize, Rcpp
+Imports: RApiSerialize, Rcpp
