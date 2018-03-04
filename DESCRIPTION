@@ -1,7 +1,7 @@
 Package: sys
 Type: Package
 Title: Portable System Utilities
-Version: 1.5
+Version: 1.5.9000
 Authors@R: c(
     person("Jeroen", "Ooms", , "jeroen@berkeley.edu", role = c("aut", "cre")),
     person("Gábor", "Csárdi", , "csardi.gabor@gmail.com", role = "ctb"))
@@ -17,7 +17,7 @@ BugReports: https://github.com/jeroen/sys/issues
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 6.0.1
+RoxygenNote: 6.0.1.9000
 SystemRequirements: libapparmor-dev (optional, debian/ubuntu only)
 Suggests:
     unix (>= 1.3),

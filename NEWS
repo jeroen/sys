@@ -1,3 +1,6 @@
+1.6
+  - Faster serialization for raw vectors in eval_fork()
+
 1.5
   - rlimit values 0 are now ignored and Inf means RLIM_INFINITY
   - Windows: fix crash for very long commands

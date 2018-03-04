@@ -182,11 +182,11 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
 
     //special case of raw vector
     if(fail == 0 && object != NULL && TYPEOF(object) == RAWSXP)
-      fail = -1;
+      fail = 1985;
 
     //try to send the 'success byte' and then output
     if(write(results[w], &fail, sizeof(fail)) > 0){
-      if(fail == -1){
+      if(fail == 1985){
         raw_to_pipe(object, results);
       } else if(fail == 0 && object){
         serialize_to_pipe(object, results);
@@ -247,8 +247,9 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
     if(child_is_alive > 0){
       if(fail == 0){
         res = unserialize_from_pipe(results);
-      } else if(fail == -1){
+      } else if(fail == 1985){
         res = raw_from_pipe(results);
+        fail = 0;
       }
     }
   }
@@ -259,7 +260,7 @@ SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SE
   waitpid(pid, NULL, 0); //wait for zombie(s) to die
 
   //actual R error
-  if(status == 0 || fail > 0){
+  if(status == 0 || fail){
     if(killcount && is_timeout){
       Rf_errorcall(call, "timeout reached (%f sec)", totaltime);
     } else if(killcount) {
