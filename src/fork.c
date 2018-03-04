@@ -90,13 +90,13 @@ static void serialize_to_pipe(SEXP object, int results[2]){
 
 static void raw_to_pipe(SEXP object, int results[2]){
   R_xlen_t len = Rf_length(object);
-  write(results[w], &len, sizeof(len));
-  write(results[w], RAW(object), len);
+  bail_if(write(results[w], &len, sizeof(len)) < sizeof(len), "raw_to_pipe: send size-byte");
+  bail_if(write(results[w], RAW(object), len) < len, "raw_to_pipe: send raw data");
 }
 
 SEXP raw_from_pipe(int results[2]){
   R_xlen_t len = 0;
-  read(results[r], &len, sizeof(len));
+  bail_if(read(results[r], &len, sizeof(len)) < sizeof(len), "raw_from_pipe: read size-byte");
   SEXP out = Rf_allocVector(RAWSXP, len);
   unsigned char * ptr = RAW(out);
   while(len > 0){
