@@ -64,7 +64,9 @@ eval_safe <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err 
       options(device = device)
     graphics.off()
     options(menu.graphics = FALSE)
-    withVisible(eval(orig_expr, parent.frame()))
+
+    # Pre-serialize because C level serialization in sys::eval_fork() has a performance bug
+    serialize(withVisible(eval(orig_expr, parent.frame())), NULL)
   }, error = function(e){
     old_class <- attr(e, "class")
     structure(e, class = c(old_class, "eval_fork_error"))
@@ -72,10 +74,11 @@ eval_safe <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err 
   tmp = tmp, timeout = timeout, std_out = std_out, std_err = std_err)
   if(inherits(out, "eval_fork_error"))
     base::stop(out)
-  if(out$visible)
-    out$value
+  res <- unserialize(out)
+  if(res$visible)
+    res$value
   else
-    invisible(out$value)
+    invisible(res$value)
 }
 
 
