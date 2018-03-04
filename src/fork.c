@@ -74,18 +74,17 @@ static int InCharCB(R_inpstream_t stream){
   return val;
 }
 
+static SEXP unserialize_from_pipe(int results[2]){
+  //unserialize stream
+  struct R_inpstream_st stream;
+  R_InitInPStream(&stream, results, R_pstream_xdr_format, InCharCB, InBytesCB, NULL,  R_NilValue);
+  return R_Unserialize(&stream);
+}
+
 static void serialize_to_pipe(SEXP object, int results[2]){
   //serialize output
   struct R_outpstream_st stream;
-  stream.data = results;
-  stream.type = R_pstream_xdr_format;
-  stream.version = R_DefaultSerializeVersion;
-  stream.OutChar = OutCharCB;
-  stream.OutBytes = OutBytesCB;
-  stream.OutPersistHookFunc = NULL;
-  stream.OutPersistHookData = R_NilValue;
-
-  //TODO: this can raise an error so that the process never dies!
+  R_InitOutPStream(&stream, results, R_pstream_xdr_format, R_DefaultSerializeVersion, OutCharCB, OutBytesCB, NULL, R_NilValue);
   R_Serialize(object, &stream);
 }
 
@@ -124,20 +123,6 @@ void prepare_fork(const char * tmpdir, int fd_out, int fd_err){
   Sys_TempDir = R_TempDir;
 #endif
 #endif
-}
-
-static SEXP unserialize_from_pipe(int results[2]){
-  //unserialize stream
-  struct R_inpstream_st stream;
-  stream.data = results;
-  stream.type = R_pstream_xdr_format;
-  stream.InPersistHookFunc = NULL;
-  stream.InPersistHookData = R_NilValue;
-  stream.InBytes = InBytesCB;
-  stream.InChar = InCharCB;
-
-  //TODO: this can raise an error!
-  return R_Unserialize(&stream);
 }
 
 SEXP R_eval_fork(SEXP call, SEXP env, SEXP subtmp, SEXP timeout, SEXP outfun, SEXP errfun){
