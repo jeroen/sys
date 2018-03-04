@@ -1,9 +1,9 @@
 Package: sys
 Type: Package
 Title: Portable System Utilities
-Version: 1.5.9000
-Authors@R: c(
-    person("Jeroen", "Ooms", , "jeroen@berkeley.edu", role = c("aut", "cre")),
+Version: 1.6
+Authors@R: c(person("Jeroen", "Ooms", role = c("aut", "cre"), 
+      email = "jeroen@berkeley.edu", comment = c(ORCID = "0000-0002-4035-0289")),
     person("Gábor", "Csárdi", , "csardi.gabor@gmail.com", role = "ctb"))
 Description: Powerful replacements for base system2 with consistent behavior
     across platforms. Supports interruption, background tasks, and full control over
