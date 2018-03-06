@@ -58,11 +58,6 @@ SEXP R_freeze(SEXP interrupt) {
   return R_NilValue;
 }
 
-void R_init_sys(DllInfo *info) {
-  R_registerRoutines(info, NULL, NULL, NULL, NULL);
-  R_useDynamicSymbols(info, TRUE);
-}
-
 SEXP R_safe_build(){
 #ifdef SYS_BUILD_SAFE
   return ScalarLogical(TRUE);
