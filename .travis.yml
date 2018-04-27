@@ -1,5 +1,4 @@
 language: r
-cache: packages
 latex: false
 fortran: false
 pandoc: false
