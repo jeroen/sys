@@ -39,7 +39,7 @@
 #' In addition the `exec_wait` function also supports the following `std_out` and `std_err`
 #' types:
 #'
-#'  - *connection* a writeable R [connection] object such as [stdout] or [stderr]
+#'  - *connection* a writable R [connection] object such as [stdout] or [stderr]
 #'  - *function*: callback function with one argument accepting a raw vector (use
 #'  [rawToChar] to convert to text).
 #'
@@ -56,7 +56,7 @@
 #' @seealso Base [system2] and [pipe] provide other methods for running a system
 #' command with output.
 #' @rdname exec
-#' @param cmd the command to run. Eiter a full path or the name of a program
+#' @param cmd the command to run. Either a full path or the name of a program
 #' which exists in the `PATH`.
 #' @param args character vector of arguments to pass
 #' @param std_out if and where to direct child process `STDOUT`. Must be one of

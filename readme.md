@@ -70,7 +70,7 @@ processes are:
 In addition the `exec_wait` function also supports the following `std_out` and `std_err`
 types:
 
- - *connection* a writeable R [connection] object such as [stdout] or [stderr]
+ - *connection* a writable R [connection] object such as [stdout] or [stderr]
  - *function*: callback function with one argument accepting a raw vector (use
  [rawToChar] to convert to text).
 

@@ -18,7 +18,7 @@ exec_internal(cmd, args = NULL, error = TRUE)
 exec_status(pid, wait = TRUE)
 }
 \arguments{
-\item{cmd}{the command to run. Eiter a full path or the name of a program
+\item{cmd}{the command to run. Either a full path or the name of a program
 which exists in the \code{PATH}.}
 
 \item{args}{character vector of arguments to pass}
@@ -84,7 +84,7 @@ processes are:
 In addition the \code{exec_wait} function also supports the following \code{std_out} and \code{std_err}
 types:
 \itemize{
-\item \emph{connection} a writeable R \link{connection} object such as \link{stdout} or \link{stderr}
+\item \emph{connection} a writable R \link{connection} object such as \link{stdout} or \link{stderr}
 \item \emph{function}: callback function with one argument accepting a raw vector (use
 \link{rawToChar} to convert to text).
 }
