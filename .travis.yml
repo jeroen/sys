@@ -16,7 +16,6 @@ matrix:
       env: _R_CHECK_FORCE_SUGGESTS_=FALSE
     - os: osx
       osx_image: xcode7.3
-      latex: false
       env: _R_CHECK_FORCE_SUGGESTS_=FALSE
 
 addons:
