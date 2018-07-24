@@ -44,6 +44,7 @@
 #' outcon <- rawConnection(raw(0), "r+")
 #' eval_safe(print(sessionInfo()), std_out = outcon)
 #' cat(rawToChar(rawConnectionValue(outcon)))
+#' close(outcon)
 #' }
 eval_safe <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err = stderr(),
                       timeout = 0, priority = NULL, uid = NULL, gid = NULL, rlimits = NULL,
