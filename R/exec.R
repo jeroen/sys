@@ -175,13 +175,6 @@ exec_status <- function(pid, wait = TRUE){
   .Call(R_exec_status, pid, wait)
 }
 
-#' @useDynLib sys C_send_interrupt
-exec_interrupt <- function(pid){
-  stopifnot(is.numeric(pid) && length(pid))
-  .Call(C_send_interrupt, as.integer(pid))
-}
-
-
 #' @useDynLib sys C_execute
 execute <- function(cmd, args, std_out, std_err, wait){
   stopifnot(is.character(cmd))

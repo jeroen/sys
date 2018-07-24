@@ -3,7 +3,6 @@
 
 /* .Call calls */
 extern SEXP C_execute(SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP C_send_interrupt(SEXP);
 extern SEXP R_aa_change_profile(SEXP);
 extern SEXP R_aa_getcon();
 extern SEXP R_aa_is_enabled();
@@ -21,7 +20,6 @@ extern SEXP R_setuid(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
     {"C_execute",           (DL_FUNC) &C_execute,           5},
-    {"C_send_interrupt",    (DL_FUNC) &C_send_interrupt,    1},
     {"R_aa_change_profile", (DL_FUNC) &R_aa_change_profile, 1},
     {"R_aa_getcon",         (DL_FUNC) &R_aa_getcon,         0},
     {"R_aa_is_enabled",     (DL_FUNC) &R_aa_is_enabled,     0},

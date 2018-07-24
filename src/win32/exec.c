@@ -257,10 +257,3 @@ SEXP R_exec_status(SEXP rpid, SEXP wait){
 SEXP R_eval_fork(SEXP x, ...){
   Rf_error("eval_fork not available on windows");
 }
-
-
-/* Windows does not allow sending CTRL_C_EVENT (SIGINT) to other processes */
-SEXP C_send_interrupt(SEXP pid){
-  bail_if(GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT , Rf_asInteger(pid)) == 0, "GenerateConsoleCtrlEvent");
-  return R_NilValue;
-}
