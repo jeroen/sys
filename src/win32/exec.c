@@ -104,7 +104,7 @@ HANDLE fd_read(const char *path){
   sa.bInheritHandle = TRUE;
   DWORD dwFlags = FILE_ATTRIBUTE_NORMAL;
   HANDLE out = CreateFile(path, GENERIC_READ, FILE_SHARE_READ,
-                          &sa, CREATE_ALWAYS, dwFlags, NULL);
+                          &sa, OPEN_EXISTING, dwFlags, NULL);
   bail_if(out == INVALID_HANDLE_VALUE, "CreateFile");
   return out;
 }
