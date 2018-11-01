@@ -115,7 +115,7 @@ HANDLE fd_write(const char * path){
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
   DWORD dwFlags = FILE_ATTRIBUTE_NORMAL;
-  HANDLE out = CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+  HANDLE out = CreateFile(path, GENERIC_WRITE, FILE_SHARE_WRITE,
                     &sa, CREATE_ALWAYS, dwFlags, NULL);
   bail_if(out == INVALID_HANDLE_VALUE, "CreateFile");
   return out;
