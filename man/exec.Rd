@@ -10,12 +10,12 @@
 \title{Running System Commands}
 \usage{
 exec_wait(cmd, args = NULL, std_out = stdout(), std_err = stderr(),
-  std_in = "/dev/null")
+  std_in = NULL)
 
 exec_background(cmd, args = NULL, std_out = TRUE, std_err = TRUE,
-  std_in = "/dev/null")
+  std_in = NULL)
 
-exec_internal(cmd, args = NULL, error = TRUE)
+exec_internal(cmd, args = NULL, std_in = NULL, error = TRUE)
 
 exec_status(pid, wait = TRUE)
 }

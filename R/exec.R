@@ -152,12 +152,12 @@ exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE, st
 #' @export
 #' @rdname exec
 #' @param error automatically raise an error if the exit status is non-zero.
-exec_internal <- function(cmd, args = NULL, error = TRUE){
+exec_internal <- function(cmd, args = NULL, std_in = NULL, error = TRUE){
   outcon <- rawConnection(raw(0), "r+")
   on.exit(close(outcon), add = TRUE)
   errcon <- rawConnection(raw(0), "r+")
   on.exit(close(errcon), add = TRUE)
-  status <- exec_wait(cmd, args, std_out = outcon, std_err = errcon)
+  status <- exec_wait(cmd, args, std_out = outcon, std_err = errcon, std_in = std_in)
   if(isTRUE(error) && !identical(status, 0L))
     stop(sprintf("Executing '%s' failed with status %d", cmd, status))
   list(
