@@ -65,6 +65,7 @@
 #' @param std_err if and where to direct child process `STDERR`. Must be one of
 #' `TRUE`, `FALSE`, filename, connection object or callback function. See section
 #' on *Output Streams* below for details.
+#' @param std_in file path to map std_in
 #' @examples # Run a command (interrupt with CTRL+C)
 #' status <- exec_wait("date")
 #'
@@ -86,7 +87,10 @@
 #' exec_status(pid)
 #' rm(pid)
 #' }
-exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
+exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr(), std_in = "/dev/null"){
+  # Only files supported for stdin for now
+  std_in <- normalizePath(std_in, mustWork = TRUE)
+
   # Convert TRUE or filepath into connection objects
   std_out <- if(isTRUE(std_out) || identical(std_out, "")){
     stdout()
@@ -135,17 +139,17 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr()){
       }
     }
   }
-  execute(cmd, args, outfun, errfun, wait = TRUE)
+  execute(cmd, args, outfun, errfun, wait = TRUE, std_in)
 }
 
 #' @export
 #' @rdname exec
-exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE){
+exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE, std_in = "/dev/null"){
   if(!is.character(std_out) && !is.logical(std_out))
     stop("argument 'std_out' must be TRUE / FALSE or a filename")
   if(!is.character(std_err) && !is.logical(std_err))
     stop("argument 'std_err' must be TRUE / FALSE or a filename")
-  execute(cmd, args, std_out, std_err, wait = FALSE)
+  execute(cmd, args, std_out, std_err, wait = FALSE, std_in)
 }
 
 #' @export
@@ -176,9 +180,10 @@ exec_status <- function(pid, wait = TRUE){
 }
 
 #' @useDynLib sys C_execute
-execute <- function(cmd, args, std_out, std_err, wait){
+execute <- function(cmd, args, std_out, std_err, wait, std_in){
   stopifnot(is.character(cmd))
   stopifnot(is.logical(wait))
+  stopifnot(is.character(std_in))
   argv <- c(cmd, as.character(args))
-  .Call(C_execute, cmd, argv, std_out, std_err, wait)
+  .Call(C_execute, cmd, argv, std_out, std_err, wait, std_in)
 }

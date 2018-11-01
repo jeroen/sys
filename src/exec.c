@@ -61,6 +61,12 @@ void pipe_set_read(int pipe[2]){
   bail_if(fcntl(pipe[r], F_SETFL, O_NONBLOCK) < 0, "fcntl() in pipe_set_read");
 }
 
+void set_input(const char * file){
+  int fd = open(file, O_RDONLY);
+  warn_if(dup2(fd, 0) < 0, "dup2() output");
+  close(fd);
+}
+
 void set_output(int fd, const char * file){
   int out = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
   warn_if(dup2(out, fd) < 0, "dup2() output");
@@ -117,7 +123,7 @@ void print_output(int pipe_out[2], SEXP fun){
     R_callback(fun, buffer, len);
 }
 
-SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
+SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEXP input){
   //split process
   int block = asLogical(wait);
   int pipe_out[2];
@@ -169,8 +175,8 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait){
 #endif
     //OSX: do NOT change pgid, so we receive signals from parent group
 
-    // close STDIN for fork
-    safe_close(STDIN_FILENO);
+    // Set STDIN for fork (default is /dev/null)
+    set_input(CHAR(STRING_ELT(input, 0)));
 
     //close all file descriptors before exit, otherwise they can segfault
     for (int i = 3; i < sysconf(_SC_OPEN_MAX); i++) {

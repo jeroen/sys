@@ -9,9 +9,11 @@
 \alias{exec_status}
 \title{Running System Commands}
 \usage{
-exec_wait(cmd, args = NULL, std_out = stdout(), std_err = stderr())
+exec_wait(cmd, args = NULL, std_out = stdout(), std_err = stderr(),
+  std_in = "/dev/null")
 
-exec_background(cmd, args = NULL, std_out = TRUE, std_err = TRUE)
+exec_background(cmd, args = NULL, std_out = TRUE, std_err = TRUE,
+  std_in = "/dev/null")
 
 exec_internal(cmd, args = NULL, error = TRUE)
 
@@ -30,6 +32,8 @@ on \emph{Output Streams} below for details.}
 \item{std_err}{if and where to direct child process \code{STDERR}. Must be one of
 \code{TRUE}, \code{FALSE}, filename, connection object or callback function. See section
 on \emph{Output Streams} below for details.}
+
+\item{std_in}{file path to map std_in}
 
 \item{error}{automatically raise an error if the exit status is non-zero.}
 

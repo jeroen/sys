@@ -19,7 +19,7 @@ extern SEXP R_setgid(SEXP);
 extern SEXP R_setuid(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
-    {"C_execute",           (DL_FUNC) &C_execute,           5},
+    {"C_execute",           (DL_FUNC) &C_execute,           6},
     {"R_aa_change_profile", (DL_FUNC) &R_aa_change_profile, 1},
     {"R_aa_getcon",         (DL_FUNC) &R_aa_getcon,         0},
     {"R_aa_is_enabled",     (DL_FUNC) &R_aa_is_enabled,     0},
