@@ -98,9 +98,20 @@ void ReadFromPipe(SEXP fun, HANDLE pipe){
   }
 }
 
+HANDLE fd_read(const char *path){
+  SECURITY_ATTRIBUTES sa = {0};
+  sa.lpSecurityDescriptor = NULL;
+  sa.bInheritHandle = TRUE;
+  DWORD dwFlags = FILE_ATTRIBUTE_NORMAL;
+  HANDLE out = CreateFile(path, GENERIC_READ, FILE_SHARE_READ,
+                          &sa, CREATE_ALWAYS, dwFlags, NULL);
+  bail_if(out == INVALID_HANDLE_VALUE, "CreateFile");
+  return out;
+}
+
 /* Create FD in Windows */
-HANDLE fd(const char * path){
-  SECURITY_ATTRIBUTES sa;
+HANDLE fd_write(const char * path){
+  SECURITY_ATTRIBUTES sa = {0};
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
   DWORD dwFlags = FILE_ATTRIBUTE_NORMAL;
@@ -134,7 +145,7 @@ SEXP make_handle_ptr(HANDLE proc){
   return ptr;
 }
 
-SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait SEXP input){
+SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEXP input){
   int block = asLogical(wait);
   SECURITY_ATTRIBUTES sa;
   sa.nLength = sizeof(sa);
@@ -152,7 +163,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait SEXP
     bail_if(!CreatePipe(&pipe_out, &si.hStdOutput, &sa, 0), "CreatePipe stdout");
     bail_if(!SetHandleInformation(pipe_out, HANDLE_FLAG_INHERIT, 0), "SetHandleInformation stdout");
   } else if(IS_STRING(outfun)){
-    si.hStdOutput = fd(CHAR(STRING_ELT(outfun, 0)));
+    si.hStdOutput = fd_write(CHAR(STRING_ELT(outfun, 0)));
   }
 
   //set STDERR
@@ -160,7 +171,11 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait SEXP
     bail_if(!CreatePipe(&pipe_err, &si.hStdError, &sa, 0), "CreatePipe stderr");
     bail_if(!SetHandleInformation(pipe_err, HANDLE_FLAG_INHERIT, 0), "SetHandleInformation stdout");
   } else if(IS_STRING(errfun)){
-    si.hStdError = fd(CHAR(STRING_ELT(errfun, 0)));
+    si.hStdError = fd_write(CHAR(STRING_ELT(errfun, 0)));
+  }
+
+  if(IS_STRING(input)){
+    si.hStdInput = fd_read(CHAR(STRING_ELT(input, 0)));
   }
 
   //append args into full command line

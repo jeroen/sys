@@ -87,10 +87,7 @@
 #' exec_status(pid)
 #' rm(pid)
 #' }
-exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr(), std_in = "/dev/null"){
-  # Only files supported for stdin for now
-  std_in <- normalizePath(std_in, mustWork = TRUE)
-
+exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr(), std_in = NULL){
   # Convert TRUE or filepath into connection objects
   std_out <- if(isTRUE(std_out) || identical(std_out, "")){
     stdout()
@@ -144,7 +141,7 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr(), 
 
 #' @export
 #' @rdname exec
-exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE, std_in = "/dev/null"){
+exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE, std_in = NULL){
   if(!is.character(std_out) && !is.logical(std_out))
     stop("argument 'std_out' must be TRUE / FALSE or a filename")
   if(!is.character(std_err) && !is.logical(std_err))
@@ -183,7 +180,8 @@ exec_status <- function(pid, wait = TRUE){
 execute <- function(cmd, args, std_out, std_err, wait, std_in){
   stopifnot(is.character(cmd))
   stopifnot(is.logical(wait))
-  stopifnot(is.character(std_in))
   argv <- c(cmd, as.character(args))
+  if(length(std_in)) # Only files supported for stdin
+    std_in <- normalizePath(std_in, mustWork = TRUE)
   .Call(C_execute, cmd, argv, std_out, std_err, wait, std_in)
 }
