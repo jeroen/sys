@@ -63,7 +63,7 @@ void pipe_set_read(int pipe[2]){
 
 void set_input(const char * file){
   int fd = open(file, O_RDONLY);
-  warn_if(dup2(fd, 0) < 0, "dup2() output");
+  warn_if(dup2(fd, STDIN_FILENO) < 0, "dup2() input");
   close(fd);
 }
 
