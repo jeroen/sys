@@ -139,6 +139,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
     block_sigchld();
   }
 
+  //hookup stdin
+  int save_stdin = dup(STDIN_FILENO);
+  bail_if(save_stdin < 0, "dup(STDIN_FILENO)");
+
   //fork the main process
   pid_t pid = fork();
   bail_if(pid < 0, "fork()");
@@ -150,6 +154,8 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
       resume_sigchild();
 
       // send stdout/stderr to pipes
+      bail_if(dup2(save_stdin, STDIN_FILENO) < 0, "dup2 save_stdin");
+      bail_if(close(save_stdin) < 0, "close save_stdin child");
       set_pipe(STDOUT_FILENO, pipe_out);
       set_pipe(STDERR_FILENO, pipe_err);
     } else {
@@ -176,7 +182,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
     //OSX: do NOT change pgid, so we receive signals from parent group
 
     // Set STDIN for fork (default is /dev/null)
-    set_input(IS_STRING(input) ? CHAR(STRING_ELT(input, 0)) : "/dev/null");
+    //set_input(IS_STRING(input) ? CHAR(STRING_ELT(input, 0)) : "/dev/null");
 
     //close all file descriptors before exit, otherwise they can segfault
     for (int i = 3; i < sysconf(_SC_OPEN_MAX); i++) {
@@ -206,6 +212,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
   }
 
   //PARENT PROCESS:
+  bail_if(close(save_stdin) < 0, "close save_stdin parent");
   close(failure[w]);
   if (!block){
     check_child_success(failure[r], CHAR(STRING_ELT(command, 0)));
