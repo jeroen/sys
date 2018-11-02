@@ -11,8 +11,7 @@ test_that("UTF-8 encoded text arguments", {
 })
 
 test_that("UTF-8 filename", {
-  txt <- readLines(system.file('utf8.txt', package = 'sys', mustWork = TRUE), encoding = 'UTF-8')
-  tmp <- tempfile(txt)
+  tmp <- tempfile("\u0420\u0423\u0421\u0421\u041a\u0418\u0419")
   f <- file(tmp, 'wb')
   serialize(iris, f)
   close(f)
