@@ -186,15 +186,15 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
 
     //prepare execv
     int len = Rf_length(args);
-    const char * argv[len + 1];
+    char * argv[len + 1];
     argv[len] = NULL;
     for(int i = 0; i < len; i++){
-      argv[i] = Rf_translateCharUTF8(STRING_ELT(args, i));
+      argv[i] = strdup(CHAR(STRING_ELT(args, i)));
     }
 
     //execvp never returns if successful
     fcntl(failure[w], F_SETFD, FD_CLOEXEC);
-    execvp(CHAR(STRING_ELT(command, 0)), (char **) argv);
+    execvp(CHAR(STRING_ELT(command, 0)), argv);
 
     //execvp failed! Send errno to parent
     warn_if(write(failure[w], &errno, sizeof(errno)) < 0, "write to failure pipe");
