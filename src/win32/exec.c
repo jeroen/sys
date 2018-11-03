@@ -130,6 +130,33 @@ BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
   return TRUE;
 }
 
+static int str_to_wchar(const char * str, wchar_t **wstr){
+  int len = MultiByteToWideChar( CP_UTF8 , 0 , str , -1, NULL , 0 );
+  *wstr = calloc(len, sizeof(*wstr));
+  MultiByteToWideChar( CP_UTF8 , 0 , str , -1, *wstr , len );
+  return len;
+}
+
+static wchar_t* sexp_to_wchar(SEXP args){
+  int total = 1;
+  wchar_t *out = calloc(total, sizeof(*out));
+  wchar_t *space = NULL;
+  int spacelen = str_to_wchar(" ", &space);
+  for(int i = 0; i < Rf_length(args); i++){
+    wchar_t *arg = NULL;
+    const char *str = CHAR(STRING_ELT(args, i));
+    int len = str_to_wchar(str, &arg);
+    total = total + len;
+    out = realloc(out, (total + spacelen) * sizeof(*out));
+    if(wcsncat(out, arg, len) == NULL)
+      Rf_error("Failure in wcsncat");
+    if(i < Rf_length(args) - 1 && wcsncat(out, space, spacelen) == NULL)
+      Rf_error("Failure in wcsncat");
+    free(arg);
+  }
+  return out;
+}
+
 void fin_proc(SEXP ptr){
   if(!R_ExternalPtrAddr(ptr)) return;
   CloseHandle(R_ExternalPtrAddr(ptr));
@@ -152,8 +179,8 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
 
-  STARTUPINFO si = {0};
-  si.cb = sizeof(STARTUPINFO);
+  STARTUPINFOW si = {0};
+  si.cb = sizeof(STARTUPINFOW);
   si.dwFlags |= STARTF_USESTDHANDLES;
   HANDLE pipe_out = NULL;
   HANDLE pipe_err = NULL;
@@ -179,17 +206,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
   }
 
   //append args into full command line
-  size_t max_len = 32768;
-  char argv[32769] = "";
-  for(int i = 0; i < Rf_length(args); i++){
-    size_t len = Rf_length(STRING_ELT(args, i));
-    if(len > max_len)
-      Rf_error("Command too long (max 32768)");
-    strcat(argv, CHAR(STRING_ELT(args, i)));
-    if(i < Rf_length(args) - 1)
-      strcat(argv, " ");
-    max_len = max_len - (len + 1);
-  }
+  wchar_t *argv = sexp_to_wchar(args);
+  if(wcslen(argv) >= 32768)
+    Rf_error("Windows commands cannot be longer than 32,768 characters");
   PROCESS_INFORMATION pi = {0};
   const char * cmd = CHAR(STRING_ELT(command, 0));
   DWORD dwCreationFlags =  CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED;
@@ -197,7 +216,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
   if(!block)
     dwCreationFlags |= CREATE_NEW_PROCESS_GROUP; //allows sending CTRL+BREAK
   */
-  if(!CreateProcess(NULL, argv, &sa, &sa, TRUE, dwCreationFlags, NULL, NULL, &si, &pi))
+
+  //wprintf("ARGV: %S\n", argv);
+  if(!CreateProcessW(NULL, argv, &sa, &sa, TRUE, dwCreationFlags, NULL, NULL, &si, &pi))
     Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, formatError(GetLastError()));
 
   //CloseHandle(pi.hThread);
@@ -210,6 +231,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
   bail_if(!AssignProcessToJobObject(job, proc), "AssignProcessToJobObject");
   ResumeThread(thread);
   CloseHandle(thread);
+  free(argv);
 
   int res = pid;
   if(block){
