@@ -49,6 +49,33 @@ int pending_interrupt() {
   return !(R_ToplevelExec(check_interrupt_fn, NULL));
 }
 
+static int str_to_wchar(const char * str, wchar_t **wstr){
+  int len = MultiByteToWideChar( CP_UTF8 , 0 , str , -1, NULL , 0 );
+  *wstr = calloc(len, sizeof(*wstr));
+  MultiByteToWideChar( CP_UTF8 , 0 , str , -1, *wstr , len );
+  return len;
+}
+
+static wchar_t* sexp_to_wchar(SEXP args){
+  int total = 1;
+  wchar_t *out = calloc(total, sizeof(*out));
+  wchar_t *space = NULL;
+  int spacelen = str_to_wchar(" ", &space);
+  for(int i = 0; i < Rf_length(args); i++){
+    wchar_t *arg = NULL;
+    const char *str = CHAR(STRING_ELT(args, i));
+    int len = str_to_wchar(str, &arg);
+    total = total + len;
+    out = realloc(out, (total + spacelen) * sizeof(*out));
+    if(wcsncat(out, arg, len) == NULL)
+      Rf_error("Failure in wcsncat");
+    if(i < Rf_length(args) - 1 && wcsncat(out, space, spacelen) == NULL)
+      Rf_error("Failure in wcsncat");
+    free(arg);
+  }
+  return out;
+}
+
 void R_callback(SEXP fun, const char * buf, ssize_t len){
   if(!isFunction(fun)) return;
   int ok;
@@ -103,8 +130,11 @@ HANDLE fd_read(const char *path){
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
   DWORD dwFlags = FILE_ATTRIBUTE_NORMAL;
-  HANDLE out = CreateFile(path, GENERIC_READ, FILE_SHARE_READ,
+  wchar_t *wpath;
+  str_to_wchar(path, &wpath);
+  HANDLE out = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ,
                           &sa, OPEN_EXISTING, dwFlags, NULL);
+  free(wpath);
   bail_if(out == INVALID_HANDLE_VALUE, "CreateFile");
   return out;
 }
@@ -115,8 +145,11 @@ HANDLE fd_write(const char * path){
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
   DWORD dwFlags = FILE_ATTRIBUTE_NORMAL;
-  HANDLE out = CreateFile(path, GENERIC_WRITE, FILE_SHARE_WRITE,
+  wchar_t *wpath;
+  str_to_wchar(path, &wpath);
+  HANDLE out = CreateFileW(wpath, GENERIC_WRITE, FILE_SHARE_WRITE,
                     &sa, CREATE_ALWAYS, dwFlags, NULL);
+  free(wpath);
   bail_if(out == INVALID_HANDLE_VALUE, "CreateFile");
   return out;
 }
@@ -128,33 +161,6 @@ BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
   if(pid == win)
     CloseWindow(hWnd);
   return TRUE;
-}
-
-static int str_to_wchar(const char * str, wchar_t **wstr){
-  int len = MultiByteToWideChar( CP_UTF8 , 0 , str , -1, NULL , 0 );
-  *wstr = calloc(len, sizeof(*wstr));
-  MultiByteToWideChar( CP_UTF8 , 0 , str , -1, *wstr , len );
-  return len;
-}
-
-static wchar_t* sexp_to_wchar(SEXP args){
-  int total = 1;
-  wchar_t *out = calloc(total, sizeof(*out));
-  wchar_t *space = NULL;
-  int spacelen = str_to_wchar(" ", &space);
-  for(int i = 0; i < Rf_length(args); i++){
-    wchar_t *arg = NULL;
-    const char *str = CHAR(STRING_ELT(args, i));
-    int len = str_to_wchar(str, &arg);
-    total = total + len;
-    out = realloc(out, (total + spacelen) * sizeof(*out));
-    if(wcsncat(out, arg, len) == NULL)
-      Rf_error("Failure in wcsncat");
-    if(i < Rf_length(args) - 1 && wcsncat(out, space, spacelen) == NULL)
-      Rf_error("Failure in wcsncat");
-    free(arg);
-  }
-  return out;
 }
 
 void fin_proc(SEXP ptr){

@@ -180,8 +180,8 @@ exec_status <- function(pid, wait = TRUE){
 execute <- function(cmd, args, std_out, std_err, wait, std_in){
   stopifnot(is.character(cmd))
   stopifnot(is.logical(wait))
-  argv <- c(cmd, as.character(args))
+  argv <- enc2utf8(c(cmd, as.character(args)))
   if(length(std_in)) # Only files supported for stdin
-    std_in <- normalizePath(std_in, mustWork = TRUE)
+    std_in <- enc2utf8(normalizePath(std_in, mustWork = TRUE))
   .Call(C_execute, cmd, argv, std_out, std_err, wait, std_in)
 }

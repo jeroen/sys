@@ -10,20 +10,16 @@ test_that("UTF-8 encoded text arguments", {
   expect_equal(txt, output)
 })
 
-test_that("UTF-8 filename", {
-  tmp <- tempfile("\u0420\u0423\u0421\u0421\u041a\u0418\u0419")
+test_that("UTF-8 filenames, binary data", {
+  tmp <- paste(tempdir(), "\u0420\u0423\u0421\u0421\u041a\u0418\u0419.txt", sep = "/")
+  tmp <- normalizePath(tmp, mustWork = FALSE)
   f <- file(tmp, 'wb')
   serialize(iris, f)
   close(f)
   expect_true(file.exists(tmp))
 
   # As a file path
-  res <- sys::exec_internal('cat', tmp)
-  expect_equal(res$status, 0)
-  expect_equal(unserialize(res$stdout), iris)
-
-  # As stdin file
-  res <- sys::exec_internal('cat', std_in = tmp)
+  res <- sys::exec_internal('cmd', c("/C", "type", tmp))
   expect_equal(res$status, 0)
   expect_equal(unserialize(res$stdout), iris)
 })
