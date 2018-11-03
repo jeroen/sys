@@ -1,3 +1,7 @@
+1.7
+  - Exec functions have gained a std_in argument
+  - Windows: switch to wchar_t filepaths and args for better UTF-8 support
+
 1.6
   - Faster serialization for raw vectors in eval_fork()
 

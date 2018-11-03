@@ -19,7 +19,11 @@ test_that("UTF-8 filenames, binary data", {
   expect_true(file.exists(tmp))
 
   # As a file path
-  res <- sys::exec_internal('cmd', c("/C", "type", tmp))
+  res <- if(.Platform$OS.type == "windows"){
+    sys::exec_internal('cmd', c("/C", "type", tmp))
+  } else {
+    sys::exec_internal('cat', tmp)
+  }
   expect_equal(res$status, 0)
   expect_equal(unserialize(res$stdout), iris)
 })
