@@ -223,7 +223,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
     dwCreationFlags |= CREATE_NEW_PROCESS_GROUP; //allows sending CTRL+BREAK
   */
 
-  //wprintf("ARGV: %S\n", argv);
+  //printf("ARGV: %S\n", argv); //NOTE capital %S for formatting wchar_t str
   if(!CreateProcessW(NULL, argv, &sa, &sa, TRUE, dwCreationFlags, NULL, NULL, &si, &pi))
     Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, formatError(GetLastError()));
 

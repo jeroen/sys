@@ -179,9 +179,18 @@ exec_status <- function(pid, wait = TRUE){
 #' @useDynLib sys C_execute
 execute <- function(cmd, args, std_out, std_err, wait, std_in){
   stopifnot(is.character(cmd))
+  if(.Platform$OS.type == 'windows')
+    cmd <- to_shortpath(cmd)
   stopifnot(is.logical(wait))
   argv <- enc2utf8(c(cmd, as.character(args)))
   if(length(std_in)) # Only files supported for stdin
     std_in <- enc2utf8(normalizePath(std_in, mustWork = TRUE))
   .Call(C_execute, cmd, argv, std_out, std_err, wait, std_in)
+}
+
+to_shortpath <- function(path){
+  out <- Sys.which(path)
+  if(nchar(out))
+    return(out)
+  return(path)
 }
