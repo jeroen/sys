@@ -22,7 +22,7 @@ windows_quote_one <- function(str){
   if(!grepl('["\\]', str)){
     return(paste0('"', str, '"'))
   }
-  str <- gsub('([\\]*)"', '\\1\\1\\\\"', str)
-  str <- gsub('([\\]+)$', '\\1\\1', str)
+  str <- gsub('([\\]*)"', '\\1\\1\\\\"', str, useBytes = TRUE)
+  str <- gsub('([\\]+)$', '\\1\\1', str, useBytes = TRUE)
   paste0('"', str, '"')
 }

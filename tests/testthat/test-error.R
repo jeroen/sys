@@ -7,7 +7,7 @@ test_that("catching execution errors", {
   # Ping has different args for each platform
   sysname <- tolower(Sys.info()[["sysname"]])
   args <- switch(sysname,
-     windows = c("-n 2", "localhost"),
+     windows = c("-n", "2", "localhost"),
      darwin = c("-t2", "localhost"),
      sunos = c("-s", "localhost", "64", "2"),
      c("-c2", "localhost") #linux/default

@@ -3,7 +3,7 @@ context("stdout and stderr")
 test_that("test output for std_out equals TRUE/FALSE", {
   skip_if_not(packageVersion("base") >= "3.2.2", "skipping capture.output tests")
   is_windows <- identical("windows", tolower(Sys.info()[["sysname"]]))
-  string <- "hello world"
+  string <- "helloworld"
   if(is_windows){
     output1 <- capture.output(res <- exec_wait('cmd', c('/C', 'echo', string)))
     output2 <- capture.output(res <- exec_wait('cmd', c('/C', 'echo', string), std_out = FALSE))
