@@ -181,7 +181,6 @@ exec_status <- function(pid, wait = TRUE){
 #' @useDynLib sys C_execute
 execute <- function(cmd, args, std_out, std_err, wait, std_in){
   stopifnot(is.character(cmd))
-  args <- enc2utf8(as.character(args))
   if(.Platform$OS.type == 'windows'){
     if(!inherits(cmd, 'AsIs'))
       cmd <- to_shortpath(cmd)

@@ -8,7 +8,10 @@
 #' @name quote
 #' @param args character vector with arguments
 windows_quote <- function(args){
+  if(is.null(args))
+    return(args)
   stopifnot(is.character(args))
+  args <- enc2utf8(args)
   vapply(args, windows_quote_one, character(1), USE.NAMES = FALSE)
 }
 
