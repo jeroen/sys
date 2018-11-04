@@ -240,10 +240,11 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
   free(argv);
 
   int res = pid;
+  const HANDLE all_handles[3] = {proc, pipe_out, pipe_err};
   if(block){
     int running = 1;
     while(running){
-      running = WaitForSingleObject(proc, 200);
+      running = WaitForMultipleObjects(3, all_handles, 0, 200);
       ReadFromPipe(outfun, pipe_out);
       ReadFromPipe(errfun, pipe_err);
       if(pending_interrupt()){
