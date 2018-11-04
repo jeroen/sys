@@ -56,9 +56,11 @@
 #' @seealso Base [system2] and [pipe] provide other methods for running a system
 #' command with output.
 #' @rdname exec
-#' @param cmd the command to run. Either a full path or the name of a program
-#' which exists in the `PATH`.
-#' @param args character vector of arguments to pass
+#' @param cmd the command to run. Either a full path or the name of a program on
+#' the `PATH`. On Windows this is automatically converted to a short path using
+#' [Sys.which], unless wrapped in [I()].
+#' @param args character vector of arguments to pass. On Windows these automatically
+#' get quoted using [windows_quote], unless the value is wrapped in [I()].
 #' @param std_out if and where to direct child process `STDOUT`. Must be one of
 #' `TRUE`, `FALSE`, filename, connection object or callback function. See section
 #' on *Output Streams* below for details.
@@ -181,8 +183,10 @@ execute <- function(cmd, args, std_out, std_err, wait, std_in){
   stopifnot(is.character(cmd))
   args <- enc2utf8(as.character(args))
   if(.Platform$OS.type == 'windows'){
-    cmd <- to_shortpath(cmd)
-    args <- windows_quote(args)
+    if(!inherits(cmd, 'AsIs'))
+      cmd <- to_shortpath(cmd)
+    if(!inherits(args, 'AsIs'))
+      args <- windows_quote(args)
   }
   stopifnot(is.logical(wait))
   argv <- enc2utf8(c(cmd, args))

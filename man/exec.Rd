@@ -20,10 +20,12 @@ exec_internal(cmd, args = NULL, std_in = NULL, error = TRUE)
 exec_status(pid, wait = TRUE)
 }
 \arguments{
-\item{cmd}{the command to run. Either a full path or the name of a program
-which exists in the \code{PATH}.}
+\item{cmd}{the command to run. Either a full path or the name of a program on
+the \code{PATH}. On Windows this is automatically converted to a short path using
+\link{Sys.which}, unless wrapped in \code{\link[=I]{I()}}.}
 
-\item{args}{character vector of arguments to pass}
+\item{args}{character vector of arguments to pass. On Windows these automatically
+get quoted using \link{windows_quote}, unless the value is wrapped in \code{\link[=I]{I()}}.}
 
 \item{std_out}{if and where to direct child process \code{STDOUT}. Must be one of
 \code{TRUE}, \code{FALSE}, filename, connection object or callback function. See section
