@@ -8,6 +8,7 @@ matrix:
     - os: linux
       env: R_CODECOV=true
       sudo: required # weird problem with 'ping' in docker
+      env: FORCE_APPARMOR=TRUE
     - os: osx
       osx_image: xcode9.3
       env: _R_CHECK_FORCE_SUGGESTS_=FALSE

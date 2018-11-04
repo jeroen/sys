@@ -15,7 +15,7 @@ if [ "$NO_APPARMOR" ] || [ "$UNAME" != "Linux" ] || [ ! -d "/sys/module/apparmor
   sed -e "s|@cflags@||" -e "s|@libs@||" src/Makevars.in > src/Makevars
   exit 0
 else
-  echo "Building with AppArmor ($UNAME)"
+  echo "Checking for AppArmor... ($UNAME)"
 fi
 
 #Try pkg-config
@@ -40,11 +40,15 @@ echo "#include $PKG_TEST_HEADER" | ${CPP} ${CPPFLAGS} ${PKG_CFLAGS} ${CFLAGS} -x
 
 # Customize the error
 if [ $? -ne 0 ]; then
-  echo "On Debian/Ubuntu this package requires AppArmor."
-  echo "Please run: sudo apt-get install $PKG_DEB_NAME"
-  echo "To build without AppArmor support, set NO_APPARMOR=1 for example:"
-  echo "install.packages('sys', configure.vars = 'NO_APPARMOR=1')"
-  exit 1
+  echo "Looks like AppArmor is not installed."
+  echo "To install AppArmor, run: sudo apt-get install $PKG_DEB_NAME."
+  if [ "$FORCE_APPARMOR" ]; then
+    exit 1
+  else
+    echo "Disabling apparmor support"
+    sed -e "s|@cflags@||" -e "s|@libs@||" src/Makevars.in > src/Makevars
+    exit 0
+  fi
 fi
 
 # Write to Makevars
