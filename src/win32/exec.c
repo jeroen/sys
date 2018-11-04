@@ -13,7 +13,7 @@
 
 /* copy from R source */
 
-const char *formatError(DWORD res){
+static const char *formatError(DWORD res){
   static char buf[1000], *p;
   FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                 NULL, res,
@@ -30,18 +30,18 @@ const char *formatError(DWORD res){
 
 
 /* check for system errors */
-void bail_if(int err, const char * what){
+static void bail_if(int err, const char * what){
   if(err)
     Rf_errorcall(R_NilValue, "System failure for: %s (%s)", what, formatError(GetLastError()));
 }
 
-void warn_if(int err, const char * what){
+static void warn_if(int err, const char * what){
   if(err)
     Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, formatError(GetLastError()));
 }
 
 /* Check for interrupt without long jumping */
-void check_interrupt_fn(void *dummy) {
+static void check_interrupt_fn(void *dummy) {
   R_CheckUserInterrupt();
 }
 
@@ -76,7 +76,7 @@ static wchar_t* sexp_to_wchar(SEXP args){
   return out;
 }
 
-void R_callback(SEXP fun, const char * buf, ssize_t len){
+static void R_callback(SEXP fun, const char * buf, ssize_t len){
   if(!isFunction(fun)) return;
   int ok;
   SEXP str = PROTECT(allocVector(RAWSXP, len));
@@ -112,7 +112,7 @@ static DWORD WINAPI PrintErr(HANDLE pipe){
   return PrintPipe(pipe, stderr);
 }
 
-void ReadFromPipe(SEXP fun, HANDLE pipe){
+static void ReadFromPipe(SEXP fun, HANDLE pipe){
   unsigned long len = 1;
   while(1){
     bail_if(!PeekNamedPipe(pipe, NULL, 0, NULL, &len, NULL), "PeekNamedPipe");
@@ -125,7 +125,7 @@ void ReadFromPipe(SEXP fun, HANDLE pipe){
   }
 }
 
-HANDLE fd_read(const char *path){
+static HANDLE fd_read(const char *path){
   SECURITY_ATTRIBUTES sa = {0};
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
@@ -140,7 +140,7 @@ HANDLE fd_read(const char *path){
 }
 
 /* Create FD in Windows */
-HANDLE fd_write(const char * path){
+static HANDLE fd_write(const char * path){
   SECURITY_ATTRIBUTES sa = {0};
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
@@ -154,7 +154,7 @@ HANDLE fd_write(const char * path){
   return out;
 }
 
-BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
+static BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
   DWORD pid = (DWORD)lpid;
   DWORD win;
   GetWindowThreadProcessId(hWnd, &win);
@@ -163,14 +163,14 @@ BOOL CALLBACK closeWindows(HWND hWnd, LPARAM lpid) {
   return TRUE;
 }
 
-void fin_proc(SEXP ptr){
+static void fin_proc(SEXP ptr){
   if(!R_ExternalPtrAddr(ptr)) return;
   CloseHandle(R_ExternalPtrAddr(ptr));
   R_ClearExternalPtr(ptr);
 }
 
 // Keeps one process handle open to let exec_status() read exit code
-SEXP make_handle_ptr(HANDLE proc){
+static SEXP make_handle_ptr(HANDLE proc){
   SEXP ptr = PROTECT(R_MakeExternalPtr(proc, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(ptr, fin_proc, 1);
   setAttrib(ptr, R_ClassSymbol, mkString("handle_ptr"));
