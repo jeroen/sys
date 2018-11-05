@@ -1,9 +1,11 @@
 AppArmor
+callr
 config
 CTRL
 ESC
 gid
 https
+libuv
 MacOS
 OpenSSL
 OSX
@@ -19,6 +21,8 @@ SecureTransport
 SIGINT
 stderr
 STDERR
+stdin
+STDIN
 stdout
 STDOUT
 uid

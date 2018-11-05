@@ -1,16 +1,18 @@
 Package: sys
 Type: Package
 Title: Portable System Utilities
-Version: 1.9000
+Version: 2.0
 Authors@R: c(person("Jeroen", "Ooms", role = c("aut", "cre"), 
       email = "jeroen@berkeley.edu", comment = c(ORCID = "0000-0002-4035-0289")),
     person("Gábor", "Csárdi", , "csardi.gabor@gmail.com", role = "ctb"))
-Description: Powerful replacements for base system2 with consistent behavior
-    across platforms. Supports interruption, background tasks, and full control over
-    STDOUT / STDERR binary or text streams. On Unix systems the package also has
-    functions for evaluating expressions inside a temporary fork. Such evaluations
-    have no side effects on the main R process, and support reliable interrupts and
-    timeouts. This provides the basis for a sandboxing mechanism.
+Description: Powerful and reliable drop-in replacements for base system / system2 
+    functions with consistent behavior across platforms. Supports interruption, 
+    background tasks, and full control over STDIN / STDOUT / STDERR binary or text
+    streams. On Windows, UTF-8 arguments get automatically encoded and escaped to 
+    work on different locales. On Unix systems the package also has functions for 
+    evaluating expressions inside a temporary fork. Such evaluations have no side 
+    effects on the main R process, and support reliable interrupts and timeouts. 
+    This provides the basis for a sandboxing mechanism.
 License: MIT + file LICENSE
 URL: https://github.com/jeroen/sys#readme
 BugReports: https://github.com/jeroen/sys/issues
