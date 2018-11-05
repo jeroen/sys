@@ -1,7 +1,10 @@
 2.0
-  - Windows: automatically convert cmd to shortpath and quote arguments
+  - Breaking change on Windows: automatically convert commands to shortpath
+    and quote arguments when needed. The caller should no longer shQuote()
+    arguments (because they will be double quoted). This makes Windows more
+    consistent with Unix.
   - Windows: switch to wchar_t filepaths and args for better UTF-8 support
-  - Exec functions have gained a std_in argument
+  - Exec functions have gained a std_in file argument
   - Add wrappers r_wait() r_internal() and r_background() for convenience
   - No longer enforce the libapparmor-dev dependency on Debian/Ubuntu.
 
