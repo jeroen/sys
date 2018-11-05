@@ -6,3 +6,4 @@
 ^readme.md$
 ^.*\.o$
 ^src/Makevars$
+^readme.md$
