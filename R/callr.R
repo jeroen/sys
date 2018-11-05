@@ -30,7 +30,7 @@ r_wait <- function(args = '--vanilla', std_out = stdout(), std_err = stderr(), s
 
 #' @export
 #' @rdname exec_r
-r_internal <- function(args = '---vanilla', std_in = NULL, error = TRUE){
+r_internal <- function(args = '--vanilla', std_in = NULL, error = TRUE){
   exec_internal(rbin(), args = args, std_in = std_in, error = error)
 }
 

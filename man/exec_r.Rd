@@ -10,7 +10,7 @@
 r_wait(args = "--vanilla", std_out = stdout(), std_err = stderr(),
   std_in = NULL)
 
-r_internal(args = "---vanilla", std_in = NULL, error = TRUE)
+r_internal(args = "--vanilla", std_in = NULL, error = TRUE)
 
 r_background(args = "--vanilla", std_out = TRUE, std_err = TRUE,
   std_in = NULL)
