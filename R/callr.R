@@ -4,8 +4,8 @@
 #' R itself: `R.home("bin/R")`.
 #'
 #' This is a simple but robust way to invoke R commands in a separate process.
-#' Use the [callr](https://cran.r-project.org/web/packages/callr/index.html)
-#' package if you need more sophisticated control over (multiple) R process jobs.
+#' Use the [callr](https://cran.r-project.org/package=callr) package if you
+#' need more sophisticated control over (multiple) R process jobs.
 #'
 #' @export
 #' @rdname exec_r

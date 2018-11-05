@@ -36,8 +36,8 @@ R itself: \code{R.home("bin/R")}.
 }
 \details{
 This is a simple but robust way to invoke R commands in a separate process.
-Use the \href{https://cran.r-project.org/web/packages/callr/index.html}{callr}
-package if you need more sophisticated control over (multiple) R process jobs.
+Use the \href{https://cran.r-project.org/package=callr}{callr} package if you
+need more sophisticated control over (multiple) R process jobs.
 }
 \examples{
 # Hello world
