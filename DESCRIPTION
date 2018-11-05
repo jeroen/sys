@@ -1,6 +1,6 @@
 Package: sys
 Type: Package
-Title: Tools for Powerful and Reliable Program Execution from R
+Title: Powerful and Reliable Tools for Runnning System Commands in R
 Version: 2.0
 Authors@R: c(person("Jeroen", "Ooms", role = c("aut", "cre"), 
       email = "jeroen@berkeley.edu", comment = c(ORCID = "0000-0002-4035-0289")),
@@ -8,9 +8,9 @@ Authors@R: c(person("Jeroen", "Ooms", role = c("aut", "cre"),
 Description: Powerful and reliable drop-in replacements for base system / system2 
     functions with consistent behavior across platforms. Supports interruption, 
     timeouts, background tasks, and full control over STDIN / STDOUT / STDERR 
-    binary or text streams. On Windows, arguments get properly encoded and quoted
-    to work on different locales. On Unix systems the package also has functions for 
-    evaluating expressions inside a temporary fork. Such evaluations have no side 
+    binary or text streams. Arguments on Windows automatically get encoded and quoted
+    to work on different locales. On Unix systems the package also provides functions
+    for evaluating expressions inside a temporary fork. Such evaluations have no side 
     effects on the main R process, and support reliable interrupts and timeouts. 
     This provides the basis for a sandboxing mechanism.
 License: MIT + file LICENSE
