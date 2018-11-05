@@ -52,6 +52,10 @@ Powerful replacements for \link{system2} with support for interruptions, backgro
 tasks and fine grained control over \code{STDOUT} / \code{STDERR} binary or text streams.
 }
 \details{
+Each value within the \code{args} vector will automatically be quoted when needed;
+you should not quote arguments yourself. Doing so anyway could lead to the value
+being quoted twice on some platforms.
+
 The \code{exec_wait} function runs a system command and waits for the child process
 to exit. When the child process completes normally (either success or error) it
 returns with the program exit code. Otherwise (if the child process gets aborted)
