@@ -11,6 +11,7 @@ windows_quote(args)
 \item{args}{character vector with arguments}
 }
 \description{
-Properly escapes spaces and double quotes in shell arguments so that they get
-properly parsed by most Windows programs.
+Quotes and escapes shell arguments when needed so that they get properly parsed
+by most Windows programs. Algorithm is ported to R from
+\href{https://github.com/libuv/libuv/blob/v1.23.0/src/win/process.c#L454-L524}{libuv}.
 }
