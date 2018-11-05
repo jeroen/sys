@@ -83,9 +83,11 @@ static SEXP unserialize_from_pipe(int results[2]){
 
 static void serialize_to_pipe(SEXP object, int results[2]){
   //serialize output
+  PROTECT(object);
   struct R_outpstream_st stream;
   R_InitOutPStream(&stream, results, R_pstream_xdr_format, R_DefaultSerializeVersion, OutCharCB, OutBytesCB, NULL, R_NilValue);
   R_Serialize(object, &stream);
+  UNPROTECT(1);
 }
 
 static void raw_to_pipe(SEXP object, int results[2]){
