@@ -55,6 +55,7 @@
 #' @aliases sys
 #' @seealso Base [system2] and [pipe] provide other methods for running a system
 #' command with output.
+#' @family sys
 #' @rdname exec
 #' @param cmd the command to run. Either a full path or the name of a program on
 #' the `PATH`. On Windows this is automatically converted to a short path using

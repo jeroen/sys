@@ -10,27 +10,34 @@
 #' @export
 #' @rdname exec_r
 #' @name exec_r
+#' @family sys
 #' @inheritParams exec
 #' @param args command line arguments for R
 #' @param std_in a file to send to stdin, usually an R script (see examples).
 #' @examples # Hello world
-#' exec_r("--version")
+#' r_wait("--version")
 #'
 #' # Run some code
-#' exec_r(c('--vanilla', '-q', '-e', 'sessionInfo()'))
+#' r_wait(c('--vanilla', '-q', '-e', 'sessionInfo()'))
 #'
 #' # Run a script via stdin
 #' tmp <- tempfile()
 #' writeLines(c("x <- rnorm(100)", "mean(x)"), con = tmp)
-#' exec_r(std_in = tmp)
-exec_r <- function(args = '--vanilla', std_out = stdout(), std_err = stderr(), std_in = NULL){
+#' r_wait(std_in = tmp)
+r_wait <- function(args = '--vanilla', std_out = stdout(), std_err = stderr(), std_in = NULL){
   exec_wait(rbin(), args = args, std_out = std_out, std_err = std_err, std_in = std_in)
 }
 
 #' @export
 #' @rdname exec_r
-exec_r_internal <- function(args = '---vanilla', std_in = NULL, error = TRUE){
+r_internal <- function(args = '---vanilla', std_in = NULL, error = TRUE){
   exec_internal(rbin(), args = args, std_in = std_in, error = error)
+}
+
+#' @export
+#' @rdname exec_r
+r_background <- function(args = '--vanilla', std_out = TRUE, std_err = TRUE, std_in = NULL){
+  exec_background(rbin(), args = args, std_out = std_out, std_err = std_err, std_in = std_in)
 }
 
 rbin <- function(){

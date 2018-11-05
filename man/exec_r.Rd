@@ -2,13 +2,18 @@
 % Please edit documentation in R/callr.R
 \name{exec_r}
 \alias{exec_r}
-\alias{exec_r_internal}
+\alias{r_wait}
+\alias{r_internal}
+\alias{r_background}
 \title{Execute R from R}
 \usage{
-exec_r(args = "--vanilla", std_out = stdout(), std_err = stderr(),
+r_wait(args = "--vanilla", std_out = stdout(), std_err = stderr(),
   std_in = NULL)
 
-exec_r_internal(args = "---vanilla", std_in = NULL, error = TRUE)
+r_internal(args = "---vanilla", std_in = NULL, error = TRUE)
+
+r_background(args = "--vanilla", std_out = TRUE, std_err = TRUE,
+  std_in = NULL)
 }
 \arguments{
 \item{args}{command line arguments for R}
@@ -36,13 +41,17 @@ package if you need more sophisticated control over (multiple) R process jobs.
 }
 \examples{
 # Hello world
-exec_r("--version")
+r_wait("--version")
 
 # Run some code
-exec_r(c('--vanilla', '-q', '-e', 'sessionInfo()'))
+r_wait(c('--vanilla', '-q', '-e', 'sessionInfo()'))
 
 # Run a script via stdin
 tmp <- tempfile()
 writeLines(c("x <- rnorm(100)", "mean(x)"), con = tmp)
-exec_r(std_in = tmp)
+r_wait(std_in = tmp)
 }
+\seealso{
+Other sys: \code{\link{exec}}
+}
+\concept{sys}

@@ -127,4 +127,7 @@ rm(pid)
 \seealso{
 Base \link{system2} and \link{pipe} provide other methods for running a system
 command with output.
+
+Other sys: \code{\link{exec_r}}
 }
+\concept{sys}
