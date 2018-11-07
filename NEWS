@@ -1,3 +1,6 @@
+2.1
+  - Windows: fix bug introduced in 2.0 when std_out = FALSE
+
 2.0
   - Breaking change on Windows: the exec functions now automatically convert
     filepaths to shortpath and quote arguments when needed. Therefore the
