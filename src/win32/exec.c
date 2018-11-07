@@ -244,7 +244,8 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
   if(block){
     int running = 1;
     while(running){
-      running = WaitForMultipleObjects(3, all_handles, 0, 200);
+      int num_handles = (pipe_out && pipe_err) ? 3 : 1;
+      running = WaitForMultipleObjects(num_handles, all_handles, 0, 200);
       ReadFromPipe(outfun, pipe_out);
       ReadFromPipe(errfun, pipe_err);
       if(pending_interrupt()){
