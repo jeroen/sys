@@ -263,8 +263,15 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
     return ScalarInteger(WEXITSTATUS(status));
   } else {
     int signal = WTERMSIG(status);
-    if(signal != 0)
-      Rf_errorcall(R_NilValue, "Program '%s' terminated by SIGNAL (%s)", CHAR(STRING_ELT(command, 0)), strsignal(signal));
+    if(signal != 0){
+      if(killcount && elapsed > totaltime){
+        Rf_errorcall(R_NilValue, "Program '%s' terminated (timeout reached: %.2fsec)",
+                     CHAR(STRING_ELT(command, 0)), totaltime);
+      } else {
+        Rf_errorcall(R_NilValue, "Program '%s' terminated by SIGNAL (%s)",
+                     CHAR(STRING_ELT(command, 0)), strsignal(signal));
+      }
+    }
     Rf_errorcall(R_NilValue, "Program terminated abnormally");
   }
 }
