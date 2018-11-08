@@ -1,0 +1,21 @@
+context("test-timeout")
+
+test_that("exec timeout works", {
+  if(.Platform$OS.type == "windows"){
+    command = "ping"
+    args = c("-n", "5")
+  } else {
+    command = 'sleep'
+    args = '5'
+  }
+  times <- system.time({
+    expect_error(exec_wait(command, args, timeout = 1.5), "timeout")
+  })
+  expect_lt(times[['elapsed']], 1.99)
+
+  # Also try with exec_internal
+  times <- system.time({
+    expect_error(exec_internal(command, args, timeout = 0.5), "timeout")
+  })
+  expect_lt(times[['elapsed']], 0.99)
+})
