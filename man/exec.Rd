@@ -10,12 +10,13 @@
 \title{Running System Commands}
 \usage{
 exec_wait(cmd, args = NULL, std_out = stdout(), std_err = stderr(),
-  std_in = NULL)
+  std_in = NULL, timeout = 0)
 
 exec_background(cmd, args = NULL, std_out = TRUE, std_err = TRUE,
   std_in = NULL)
 
-exec_internal(cmd, args = NULL, std_in = NULL, error = TRUE)
+exec_internal(cmd, args = NULL, std_in = NULL, error = TRUE,
+  timeout = 0)
 
 exec_status(pid, wait = TRUE)
 }
@@ -36,6 +37,8 @@ on \emph{Output Streams} below for details.}
 on \emph{Output Streams} below for details.}
 
 \item{std_in}{file path to map std_in}
+
+\item{timeout}{maximum time in seconds}
 
 \item{error}{automatically raise an error if the exit status is non-zero.}
 

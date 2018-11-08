@@ -73,6 +73,7 @@
 #' `TRUE`, `FALSE`, filename, connection object or callback function. See section
 #' on *Output Streams* below for details.
 #' @param std_in file path to map std_in
+#' @param timeout maximum time in seconds
 #' @examples # Run a command (interrupt with CTRL+C)
 #' status <- exec_wait("date")
 #'
@@ -94,7 +95,7 @@
 #' exec_status(pid)
 #' rm(pid)
 #' }
-exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr(), std_in = NULL){
+exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr(), std_in = NULL, timeout = 0){
   # Convert TRUE or filepath into connection objects
   std_out <- if(isTRUE(std_out) || identical(std_out, "")){
     stdout()
@@ -143,7 +144,7 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr(), 
       }
     }
   }
-  execute(cmd, args, outfun, errfun, wait = TRUE, std_in)
+  execute(cmd, args, outfun, errfun, wait = TRUE, std_in, timeout)
 }
 
 #' @export
@@ -153,18 +154,19 @@ exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE, st
     stop("argument 'std_out' must be TRUE / FALSE or a filename")
   if(!is.character(std_err) && !is.logical(std_err))
     stop("argument 'std_err' must be TRUE / FALSE or a filename")
-  execute(cmd, args, std_out, std_err, wait = FALSE, std_in)
+  execute(cmd, args, std_out, std_err, wait = FALSE, std_in, timeout = 0)
 }
 
 #' @export
 #' @rdname exec
 #' @param error automatically raise an error if the exit status is non-zero.
-exec_internal <- function(cmd, args = NULL, std_in = NULL, error = TRUE){
+exec_internal <- function(cmd, args = NULL, std_in = NULL, error = TRUE, timeout = 0){
   outcon <- rawConnection(raw(0), "r+")
   on.exit(close(outcon), add = TRUE)
   errcon <- rawConnection(raw(0), "r+")
   on.exit(close(errcon), add = TRUE)
-  status <- exec_wait(cmd, args, std_out = outcon, std_err = errcon, std_in = std_in)
+  status <- exec_wait(cmd, args, std_out = outcon,
+                      std_err = errcon, std_in = std_in, timeout = timeout)
   if(isTRUE(error) && !identical(status, 0L))
     stop(sprintf("Executing '%s' failed with status %d", cmd, status))
   list(
@@ -184,7 +186,7 @@ exec_status <- function(pid, wait = TRUE){
 }
 
 #' @useDynLib sys C_execute
-execute <- function(cmd, args, std_out, std_err, wait, std_in){
+execute <- function(cmd, args, std_out, std_err, wait, std_in, timeout){
   stopifnot(is.character(cmd))
   if(.Platform$OS.type == 'windows'){
     if(!inherits(cmd, 'AsIs'))
@@ -196,7 +198,7 @@ execute <- function(cmd, args, std_out, std_err, wait, std_in){
   argv <- enc2utf8(c(cmd, args))
   if(length(std_in)) # Only files supported for stdin
     std_in <- enc2utf8(normalizePath(std_in, mustWork = TRUE))
-  .Call(C_execute, cmd, argv, std_out, std_err, wait, std_in)
+  .Call(C_execute, cmd, argv, std_out, std_err, wait, std_in, timeout)
 }
 
 to_shortpath <- function(path){

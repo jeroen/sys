@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <signal.h>
 #include <string.h>
 #include <fcntl.h>
@@ -123,7 +124,7 @@ void print_output(int pipe_out[2], SEXP fun){
     R_callback(fun, buffer, len);
 }
 
-SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEXP input){
+SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEXP input, SEXP timeout){
   //split process
   int block = asLogical(wait);
   int pipe_out[2];
@@ -216,13 +217,32 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
   pipe_set_read(pipe_out);
   pipe_set_read(pipe_err);
 
+  //start timer
+  struct timeval start, end;
+  double elapsed, totaltime = REAL(timeout)[0];
+  gettimeofday(&start, NULL);
+
   //status -1 means error, 0 means running
   int status = 0;
   int killcount = 0;
   while (waitpid(pid, &status, WNOHANG) >= 0){
+    //check for timeout
+    if(totaltime > 0){
+      gettimeofday(&end, NULL);
+      elapsed = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
+      if(killcount == 0 && elapsed > totaltime){
+        warn_if(kill(pid, SIGINT), "interrupt child");
+        killcount++;
+      } else if(killcount == 1 && elapsed > (totaltime + 1)){
+        warn_if(kill(pid, SIGKILL), "force kill child");
+        killcount++;
+      }
+    }
+
+    //for well behaved programs, SIGINT is automatically forwarded
     if(pending_interrupt()){
       //pass interrupt to child. On second try we SIGKILL.
-      warn_if(kill(-pid, killcount ? SIGKILL : SIGINT), "kill child");
+      warn_if(kill(pid, killcount ? SIGKILL : SIGINT), "kill child");
       killcount++;
     }
     //make sure to empty the pipes, even if fun == NULL
