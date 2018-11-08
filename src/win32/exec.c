@@ -289,6 +289,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
   CloseHandle(job);
   CloseHandle(si.hStdError);
   CloseHandle(si.hStdOutput);
+  CloseHandle(si.hStdInput);
   if(timeout_reached && res){
     Rf_errorcall(R_NilValue, "Program '%s' terminated (timeout reached: %.2fsec)",
                  CHAR(STRING_ELT(command, 0)), totaltime);
