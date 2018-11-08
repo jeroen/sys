@@ -3,13 +3,13 @@ context("test-timeout")
 test_that("exec timeout works", {
   if(.Platform$OS.type == "windows"){
     command = "ping"
-    args = c("-n", "5")
+    args = c("-n", "5", "localhost")
   } else {
     command = 'sleep'
     args = '5'
   }
   times <- system.time({
-    expect_error(exec_wait(command, args, timeout = 1.5), "timeout")
+    expect_error(exec_wait(command, args, timeout = 1.5, std_out = FALSE), "timeout")
   })
   expect_lt(times[['elapsed']], 1.99)
 
