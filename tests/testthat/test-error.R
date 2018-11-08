@@ -7,10 +7,10 @@ test_that("catching execution errors", {
   # Ping has different args for each platform
   sysname <- tolower(Sys.info()[["sysname"]])
   args <- switch(sysname,
-     windows = c("-n", "2", "localhost"),
-     darwin = c("-t2", "localhost"),
-     sunos = c("-s", "localhost", "64", "2"),
-     c("-c2", "localhost") #linux/default
+     windows = c("-n", "3", "localhost"),
+     darwin = c("-t3", "localhost"),
+     sunos = c("-s", "localhost", "64", "3"),
+     c("-c3", "localhost") #linux/default
   )
 
   # Run ping
@@ -32,4 +32,16 @@ test_that("catching execution errors", {
   expect_error(exec_internal('ping', "999.999.999.999.999"))
   out <- exec_internal('ping', "999.999.999.999.999", error = FALSE)
   expect_gt(out$status, 0)
+
+  # Timeout
+  times <- system.time({
+    expect_error(exec_wait("ping", args, std_out = FALSE, timeout = 1.5), "timeout")
+  })
+  expect_lt(times[['elapsed']], 1.9)
+
+  # Also try with exec_internal
+  times <- system.time({
+    expect_error(exec_wait("ping", args, std_out = FALSE, timeout = 0.5), "timeout")
+  })
+  expect_lt(times[['elapsed']], 0.9)
 })
