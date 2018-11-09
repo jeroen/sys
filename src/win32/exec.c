@@ -225,8 +225,12 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
   */
 
   //printf("ARGV: %S\n", argv); //NOTE capital %S for formatting wchar_t str
-  if(!CreateProcessW(NULL, argv, &sa, &sa, TRUE, dwCreationFlags, NULL, NULL, &si, &pi))
+  if(!CreateProcessW(NULL, argv, &sa, &sa, TRUE, dwCreationFlags, NULL, NULL, &si, &pi)){
+    //Failure to start, probably non existing program. Cleanup.
+    CloseHandle(pipe_out); CloseHandle(pipe_err);
+    CloseHandle(si.hStdInput); CloseHandle(si.hStdOutput); CloseHandle(si.hStdInput);
     Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, formatError(GetLastError()));
+  }
 
   //CloseHandle(pi.hThread);
   DWORD pid = GetProcessId(pi.hProcess);
