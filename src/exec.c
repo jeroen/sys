@@ -46,13 +46,18 @@ void bail_if(int err, const char * what){
     Rf_errorcall(R_NilValue, "System failure for: %s (%s)", what, strerror(errno));
 }
 
+void print_if(int err, const char * what){
+  if(err)
+    fprintf(stderr, "System failure for: %s (%s)", what, strerror(errno));
+}
+
 void warn_if(int err, const char * what){
   if(err)
     Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, strerror(errno));
 }
 
 void set_pipe(int input, int output[2]){
-  bail_if(dup2(output[w], input) < 0, "dup2() stdout/stderr");
+  print_if(dup2(output[w], input) < 0, "dup2() stdout/stderr");
   close(output[r]);
   close(output[w]);
 }
@@ -64,20 +69,26 @@ void pipe_set_read(int pipe[2]){
 
 void set_input(const char * file){
   int fd = open(file, O_RDONLY);
-  warn_if(dup2(fd, STDIN_FILENO) < 0, "dup2() input");
+  print_if(fd < 0, "open() set_input");
+  close(STDIN_FILENO);
+  print_if(fcntl(fd, F_DUPFD, STDIN_FILENO) < 0, "dup2() input");
   close(fd);
 }
 
-void set_output(int fd, const char * file){
-  int out = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-  warn_if(dup2(out, fd) < 0, "dup2() output");
-  close(out);
+void set_output(int target, const char * file){
+  int fd = open(file, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+  print_if(fd < 0, "open() set_output");
+  close(target);
+  print_if(fcntl(fd, F_DUPFD, target) < 0, "fcntl() set_output");
+  close(fd);
 }
 
-void safe_close(int fd){
-  int fdnull = open("/dev/null", O_WRONLY);
-  warn_if(dup2(fdnull, fd), "dup2 in safe_close()");
-  close(fdnull);
+void safe_close(int target){
+  int fd = open("/dev/null", O_WRONLY);
+  print_if(fd < 0, "open() set_output");
+  close(target);
+  print_if(fcntl(fd, F_DUPFD, target) < 0, "fcntl() safe_close");
+  close(fd);
 }
 
 static void check_child_success(int fd, const char * cmd){
@@ -198,7 +209,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
     execvp(CHAR(STRING_ELT(command, 0)), argv);
 
     //execvp failed! Send errno to parent
-    warn_if(write(failure[w], &errno, sizeof(errno)) < 0, "write to failure pipe");
+    print_if(write(failure[w], &errno, sizeof(errno)) < 0, "write to failure pipe");
     close(failure[w]);
 
     //exit() not allowed by CRAN. raise() should suffice
