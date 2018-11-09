@@ -68,27 +68,23 @@ void pipe_set_read(int pipe[2]){
 }
 
 void set_input(const char * file){
-  int fd = open(file, O_RDONLY);
-  print_if(fd < 0, "open() set_input");
   close(STDIN_FILENO);
-  print_if(fcntl(fd, F_DUPFD, STDIN_FILENO) < 0, "dup2() input");
-  close(fd);
+  int fd = open(file, O_RDONLY); //lowest numbered FD should be 0
+  print_if(fd != 0, "open() set_input not equal to STDIN_FILENO");
 }
 
 void set_output(int target, const char * file){
+  close(target);
   int fd = open(file, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
   print_if(fd < 0, "open() set_output");
-  close(target);
+  if(fd == target)
+    return;
   print_if(fcntl(fd, F_DUPFD, target) < 0, "fcntl() set_output");
   close(fd);
 }
 
 void safe_close(int target){
-  int fd = open("/dev/null", O_WRONLY);
-  print_if(fd < 0, "open() set_output");
-  close(target);
-  print_if(fcntl(fd, F_DUPFD, target) < 0, "fcntl() safe_close");
-  close(fd);
+  set_output(target, "/dev/null");
 }
 
 static void check_child_success(int fd, const char * cmd){
