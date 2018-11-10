@@ -1,6 +1,7 @@
 2.1
   - Windows: fix bug introduced in 2.0 when std_out = FALSE
   - Support std_in = FALSE to restore old behavior of an unreadable stdin (for rtika)
+  - Use fcntl instead of dup2() on unix
 
 2.0
   - Breaking change on Windows: the exec functions now automatically convert
