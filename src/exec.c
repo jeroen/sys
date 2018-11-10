@@ -184,7 +184,11 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEX
     //OSX: do NOT change pgid, so we receive signals from parent group
 
     // Set STDIN for fork (default is /dev/null)
-    set_input(IS_STRING(input) ? CHAR(STRING_ELT(input, 0)) : "/dev/null");
+    if(IS_FALSE(input)){
+      safe_close(STDIN_FILENO);
+    } else if(!IS_TRUE(input)){
+      set_input(IS_STRING(input) ? CHAR(STRING_ELT(input, 0)) : "/dev/null");
+    }
 
     //close all file descriptors before exit, otherwise they can segfault
     for (int i = 3; i < sysconf(_SC_OPEN_MAX); i++) {

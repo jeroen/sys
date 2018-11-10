@@ -196,7 +196,7 @@ execute <- function(cmd, args, std_out, std_err, wait, std_in, timeout){
   }
   stopifnot(is.logical(wait))
   argv <- enc2utf8(c(cmd, args))
-  if(length(std_in)) # Only files supported for stdin
+  if(length(std_in) && !is.logical(std_in)) # Only files supported for stdin
     std_in <- enc2utf8(normalizePath(std_in, mustWork = TRUE))
   .Call(C_execute, cmd, argv, std_out, std_err, wait, std_in, timeout)
 }
