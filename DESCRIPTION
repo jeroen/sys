@@ -24,6 +24,5 @@ SystemRequirements: libapparmor-dev (optional, debian/ubuntu only)
 Suggests:
     spelling,
     unix (>= 1.3),
-    testthat,
-    ps
+    testthat
 Language: en-US
