@@ -144,7 +144,8 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr(), 
       }
     }
   }
-  execute(cmd, args, outfun, errfun, wait = TRUE, std_in, timeout)
+  execute(cmd = cmd, args = args, std_out = outfun, std_err = errfun,
+          std_in = std_in, wait = TRUE, timeout = timeout)
 }
 
 #' @export
@@ -154,7 +155,8 @@ exec_background <- function(cmd, args = NULL, std_out = TRUE, std_err = TRUE, st
     stop("argument 'std_out' must be TRUE / FALSE or a filename")
   if(!is.character(std_err) && !is.logical(std_err))
     stop("argument 'std_err' must be TRUE / FALSE or a filename")
-  execute(cmd, args, std_out, std_err, wait = FALSE, std_in, timeout = 0)
+  execute(cmd = cmd, args = args, std_out = std_out, std_err = std_err,
+          wait = FALSE, std_in = std_in, timeout = 0)
 }
 
 #' @export
@@ -186,7 +188,7 @@ exec_status <- function(pid, wait = TRUE){
 }
 
 #' @useDynLib sys C_execute
-execute <- function(cmd, args, std_out, std_err, wait, std_in, timeout){
+execute <- function(cmd, args, std_out, std_err, std_in, wait, timeout){
   stopifnot(is.character(cmd))
   if(.Platform$OS.type == 'windows'){
     if(!inherits(cmd, 'AsIs'))
@@ -198,7 +200,7 @@ execute <- function(cmd, args, std_out, std_err, wait, std_in, timeout){
   argv <- enc2utf8(c(cmd, args))
   if(length(std_in) && !is.logical(std_in)) # Only files supported for stdin
     std_in <- enc2utf8(normalizePath(std_in, mustWork = TRUE))
-  .Call(C_execute, cmd, argv, std_out, std_err, wait, std_in, timeout)
+  .Call(C_execute, cmd, argv, std_out, std_err, std_in, wait, timeout)
 }
 
 to_shortpath <- function(path){

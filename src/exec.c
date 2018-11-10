@@ -137,7 +137,7 @@ void print_output(int pipe_out[2], SEXP fun){
     R_callback(fun, buffer, len);
 }
 
-SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEXP input, SEXP timeout){
+SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SEXP wait, SEXP timeout){
   //split process
   int block = asLogical(wait);
   int pipe_out[2];

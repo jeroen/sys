@@ -179,7 +179,7 @@ static SEXP make_handle_ptr(HANDLE proc){
   return ptr;
 }
 
-SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP wait, SEXP input, SEXP timeout){
+SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SEXP wait, SEXP timeout){
   int block = asLogical(wait);
   SECURITY_ATTRIBUTES sa;
   sa.nLength = sizeof(sa);
