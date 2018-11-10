@@ -46,9 +46,15 @@ void bail_if(int err, const char * what){
     Rf_errorcall(R_NilValue, "System failure for: %s (%s)", what, strerror(errno));
 }
 
+/* In the fork we don't want to use the R API anymore */
 void print_if(int err, const char * what){
-  if(err)
-    fprintf(stderr, "System failure for: %s (%s)", what, strerror(errno));
+  if(err){
+    FILE *stream = fdopen(STDERR_FILENO, "w");
+    if(stream){
+      fprintf(stream, "System failure for: %s (%s)\n", what, strerror(errno));
+      fclose(stream);
+    }
+  }
 }
 
 void warn_if(int err, const char * what){
