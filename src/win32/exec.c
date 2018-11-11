@@ -251,12 +251,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
   gettimeofday(&start, NULL);
 
   int res = pid;
-  const HANDLE all_handles[3] = {proc, pipe_out, pipe_err};
   if(block){
     int running = 1;
     while(running){
-      int num_handles = (pipe_out && pipe_err) ? 3 : 1;
-      running = WaitForMultipleObjects(num_handles, all_handles, 0, 200);
+      running = WaitForSingleObject(proc, 1);
       ReadFromPipe(outfun, pipe_out);
       ReadFromPipe(errfun, pipe_err);
 
