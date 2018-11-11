@@ -140,6 +140,7 @@ void print_output(int pipe_out[2], SEXP fun){
 SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SEXP wait, SEXP timeout){
   //split process
   int block = asLogical(wait);
+  int pipe_in[2];
   int pipe_out[2];
   int pipe_err[2];
   int failure[2];
@@ -149,7 +150,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
 
   //create io pipes only in blocking mode
   if(block){
-    bail_if(pipe(pipe_out) || pipe(pipe_err), "create pipe");
+    bail_if(pipe(pipe_out) || pipe(pipe_err) || pipe(pipe_in), "create pipe");
     block_sigchld();
   }
 
@@ -192,9 +193,14 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
     // Set STDIN for fork (default is /dev/null)
     if(IS_FALSE(input)){
       safe_close(STDIN_FILENO);
-    } else if(!IS_TRUE(input)){
+    } if(block && IS_TRUE(input)){
+      print_if(fcntl(pipe_in[r], F_SETFL, O_NONBLOCK) < 0, "fcntl() pipe_in[r]");
+      print_if(dup2(pipe_in[r], STDIN_FILENO) < 0,"dup2() stdin");
+    } else {
       set_input(IS_STRING(input) ? CHAR(STRING_ELT(input, 0)) : "/dev/null");
     }
+    close(pipe_in[w]);
+    close(pipe_in[r]);
 
     //close all file descriptors before exit, otherwise they can segfault
     for (int i = 3; i < sysconf(_SC_OPEN_MAX); i++) {
@@ -226,6 +232,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
   //PARENT PROCESS:
   close(failure[w]);
   if (!block){
+    //TODO close pipe_out / pipe_err  here?
     check_child_success(failure[r], CHAR(STRING_ELT(command, 0)));
     return ScalarInteger(pid);
   }
@@ -233,6 +240,15 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
   //blocking: close write end of IO pipes
   pipe_set_read(pipe_out);
   pipe_set_read(pipe_err);
+
+  //close read end of input pipe
+  close(pipe_in[r]);
+  if(IS_TRUE(input)){
+    dup2(STDIN_FILENO, pipe_in[w]);
+    safe_close(STDIN_FILENO);
+  } else {
+    close(pipe_in[w]);
+  }
 
   //start timer
   struct timeval start, end;
@@ -275,6 +291,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
   // check for execvp() error *after* closing pipes and zombie
   resume_sigchild();
   check_child_success(failure[r], CHAR(STRING_ELT(command, 0)));
+
+  // restore stdin
+  dup2(pipe_in[w], STDIN_FILENO);
+  close(pipe_in[w]);
 
   if(WIFEXITED(status)){
     return ScalarInteger(WEXITSTATUS(status));
