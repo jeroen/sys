@@ -254,6 +254,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
   if(block){
     int running = 1;
     while(running){
+      //wait 1ms, enough to fix busy waiting. Windows does not support polling on pipes.
       running = WaitForSingleObject(proc, 1);
       ReadFromPipe(outfun, pipe_out);
       ReadFromPipe(errfun, pipe_err);
