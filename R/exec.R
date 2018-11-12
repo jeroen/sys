@@ -204,7 +204,7 @@ execute <- function(cmd, args, std_out, std_err, std_in, wait, timeout){
 }
 
 to_shortpath <- function(path){
-  out <- Sys.which(path)
+  out <- Sys.which(path.expand(path))
   if(nchar(out))
     return(out)
   return(path)
