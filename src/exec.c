@@ -189,8 +189,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
 #endif
     //OSX: do NOT change pgid, so we receive signals from parent group
 
-    // Set STDIN for fork (default is /dev/null)
+    // Set STDIN for child (default is /dev/null)
     if(IS_FALSE(input)){
+      //set stdin to unreadable /dev/null (O_WRONLY)
       safe_close(STDIN_FILENO);
     } else if(!IS_TRUE(input)){
       set_input(IS_STRING(input) ? CHAR(STRING_ELT(input, 0)) : "/dev/null");
