@@ -209,8 +209,9 @@ test_that("tempdir/interactivity", {
 
 test_that("fork stdout", {
   skip_on_os("windows")
-  user <- system2("whoami", stdout = TRUE)
-  out <- NULL
+  skip_if_not(safe_build())
+
+  out <- raw()
   res <- eval_fork(cat("foo"), std_out = function(x){
     out <<- c(out, x)
   })

@@ -19,7 +19,7 @@ BugReports: https://github.com/jeroen/sys/issues
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
 SystemRequirements: libapparmor-dev (optional, debian/ubuntu only)
 Suggests:
     spelling,
