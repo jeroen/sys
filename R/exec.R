@@ -126,7 +126,12 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr(), 
         flush(std_out)
       }
     }
+  } else if(is.function(std_out)){
+    if(!length(formals(std_out)))
+      stop("Function std_out must take at least one argument")
+    std_out
   }
+
   errfun <- if(inherits(std_err, "connection")){
     if(!isOpen(std_err)){
       open(std_err, "wb")
@@ -143,6 +148,10 @@ exec_wait <- function(cmd, args = NULL, std_out = stdout(), std_err = stderr(), 
         flush(std_err)
       }
     }
+  } else if(is.function(std_err)){
+    if(!length(formals(std_err)))
+      stop("Function std_err must take at least one argument")
+    std_err
   }
   execute(cmd = cmd, args = args, std_out = outfun, std_err = errfun,
           std_in = std_in, wait = TRUE, timeout = timeout)

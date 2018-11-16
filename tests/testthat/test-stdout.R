@@ -21,3 +21,15 @@ test_that("test output for std_out equals TRUE/FALSE", {
   expect_equal(sub("\\W+$", "", output3), string)
   expect_equal(output4, character())
 })
+
+test_that("User supplied callback function", {
+  user <- system2("whoami", stdout = TRUE)
+  out <- NULL
+  add <- function(x){
+    out <<- c(out, x)
+  }
+  res <- exec_wait('whoami', std_out = add)
+  expect_equal(res, 0)
+  expect_equal(trimws(rawToChar(out)), user)
+
+})

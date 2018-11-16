@@ -116,7 +116,12 @@ eval_fork <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err 
         flush(std_out)
       }
     }
+  } else if(is.function(std_out)){
+    if(!length(formals(std_out)))
+      stop("Function std_out must take at least one argument")
+    std_out
   }
+
   errfun <- if(inherits(std_err, "connection")){
     if(!isOpen(std_err)){
       open(std_err, "wb")
@@ -133,7 +138,12 @@ eval_fork <- function(expr, tmp = tempfile("fork"), std_out = stdout(), std_err 
         flush(std_err)
       }
     }
+  } else if(is.function(std_err)){
+    if(!length(formals(std_err)))
+      stop("Function std_err must take at least one argument")
+    std_err
   }
+
   clenv <- force(parent.frame())
   clexpr <- substitute(expr)
   eval_fork_internal(expr = clexpr, envir = clenv, tmp = tmp, timeout = timeout, outfun = outfun,

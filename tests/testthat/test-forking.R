@@ -206,3 +206,13 @@ test_that("tempdir/interactivity", {
   expect_false(eval_fork(interactive()))
   expect_equal(eval_safe(readline(), std_out = FALSE, std_err = FALSE), "")
 })
+
+test_that("fork stdout", {
+  skip_on_os("windows")
+  user <- system2("whoami", stdout = TRUE)
+  out <- NULL
+  res <- eval_fork(cat("foo"), std_out = function(x){
+    out <<- c(out, x)
+  })
+  expect_equal("foo", rawToChar(out))
+})
