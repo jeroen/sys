@@ -1,3 +1,7 @@
+2.2
+  - Windows: fix error message when running non-existing command
+  - Fix support for callback functions as std_out / std_err as documented
+
 2.1
   - Windows: fix bug introduced in 2.0 when std_out = FALSE
   - Support std_in = FALSE to restore old behavior of an unreadable stdin (for rtika)

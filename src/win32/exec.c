@@ -227,9 +227,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
   //printf("ARGV: %S\n", argv); //NOTE capital %S for formatting wchar_t str
   if(!CreateProcessW(NULL, argv, &sa, &sa, TRUE, dwCreationFlags, NULL, NULL, &si, &pi)){
     //Failure to start, probably non existing program. Cleanup.
+    const char *errmsg = formatError(GetLastError());
     CloseHandle(pipe_out); CloseHandle(pipe_err);
     CloseHandle(si.hStdInput); CloseHandle(si.hStdOutput); CloseHandle(si.hStdInput);
-    Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, formatError(GetLastError()));
+    Rf_errorcall(R_NilValue, "Failed to execute '%s' (%s)", cmd, errmsg);
   }
 
   //CloseHandle(pi.hThread);
