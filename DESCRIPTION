@@ -1,18 +1,15 @@
 Package: sys
 Type: Package
 Title: Powerful and Reliable Tools for Running System Commands in R
-Version: 2.1.9000
+Version: 2.9000
 Authors@R: c(person("Jeroen", "Ooms", role = c("aut", "cre"), 
       email = "jeroen@berkeley.edu", comment = c(ORCID = "0000-0002-4035-0289")),
     person("Gábor", "Csárdi", , "csardi.gabor@gmail.com", role = "ctb"))
 Description: Drop-in replacements for the base system2() function with fine control
     and consistent behavior across platforms. Supports clean interruption, timeout, 
     background tasks, and streaming STDIN / STDOUT / STDERR over binary or text 
-    connections. Arguments on Windows automatically get encoded and quoted to work on different 
-    locales. On Unix platforms the package also provides functions for evaluating 
-    expressions inside a temporary fork. Such evaluations have no side effects on the
-    main R process, and support reliable interrupts and timeouts. This provides the
-    basis for a sandboxing mechanism.
+    connections. Arguments on Windows automatically get encoded and quoted to work 
+    on different locales.
 License: MIT + file LICENSE
 URL: https://github.com/jeroen/sys#readme
 BugReports: https://github.com/jeroen/sys/issues
