@@ -2,13 +2,17 @@
 % Please edit documentation in R/legacy.R
 \name{eval_safe}
 \alias{eval_safe}
+\alias{aa_config}
 \title{Legacy functions}
 \usage{
 eval_safe(...)
+
+aa_config(...)
 }
 \arguments{
-\item{...}{see \code{?eval_safe} in unix}
+\item{...}{see respective functions in the unix package}
 }
 \description{
-These functions have moved into the \code{unix} package.
+These functions have moved into the \code{unix} package. Please update
+your references.
 }

@@ -7,3 +7,4 @@
 ^.*\.o$
 ^src/Makevars$
 ^readme.md$
+^revdep
