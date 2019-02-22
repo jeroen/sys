@@ -17,5 +17,5 @@ aa_config <- function(...){
 }
 
 set_tempdir <- function(...){
-  unix::set_tempdir(...)
+  unix:::set_tempdir(...)
 }
