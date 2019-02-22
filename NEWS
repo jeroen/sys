@@ -2,8 +2,6 @@
   - Major cleanup: moved all of the unix specific functions into the unix package
   - The 'sys' package now only focuses on executing shell commands
   - Removed configure script, no longer needed
-
-2.2
   - Windows: fix error message when running non-existing command
   - Fix support for callback functions as std_out / std_err as documented
 
