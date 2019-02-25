@@ -1,21 +1,20 @@
-#' Legacy functions
+#' Deprecated functions
 #'
 #' These functions have moved into the `unix` package. Please update
 #' your references.
 #'
 #' @export
-#' @rdname legacy
+#' @name sys-deprecated
+#' @rdname deprecated
 #' @param ... see respective functions in the unix package
 eval_safe <- function(...){
+  .Deprecated('unix::eval_safe', 'sys')
   unix::eval_safe(...)
 }
 
 #' @export
-#' @rdname legacy
-aa_config <- function(...){
-  unix::aa_config(...)
-}
-
-set_tempdir <- function(...){
-  unix:::set_tempdir(...)
+#' @rdname deprecated
+eval_fork <- function(...){
+  .Deprecated('unix::eval_fork', 'sys')
+  unix::eval_fork(...)
 }
