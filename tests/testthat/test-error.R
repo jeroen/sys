@@ -16,9 +16,9 @@ test_that("catching execution errors", {
   # Run ping
   expect_equal(exec_wait("ping", args, std_out = FALSE), 0)
 
-  # Error for non existing program
-  expect_error(exec_wait("doesnotexist"), "Failed to execute.*file")
-  expect_error(exec_background("doesnotexist"), "Failed to execute.*file")
+  # Error for non existing program (win-builder gives a german error)
+  expect_error(exec_wait("doesnotexist"), "Failed to execute.*(file|Datei)")
+  expect_error(exec_background("doesnotexist"), "Failed to execute.*(file|Datei)")
 
   # Same without stdout
   expect_error(exec_wait("doesnotexist", std_out = FALSE, std_err = FALSE), "Failed to execute")
