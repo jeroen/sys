@@ -23,6 +23,7 @@ test_that("test output for std_out equals TRUE/FALSE", {
 })
 
 test_that("User supplied callback function", {
+  skip_if_not(nchar(Sys.which('whoami')) > 0)
   user <- system2("whoami", stdout = TRUE)
   out <- NULL
   add <- function(x){

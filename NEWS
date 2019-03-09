@@ -1,3 +1,6 @@
+3.1
+  - Skip a unit test if the 'whoami' program is not available
+
 3.0
   - Major cleanup: moved all of the unix specific functions into the unix package
   - The 'sys' package now only focuses on executing shell commands
