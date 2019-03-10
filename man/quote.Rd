@@ -12,6 +12,10 @@ windows_quote(args)
 }
 \description{
 Quotes and escapes shell arguments when needed so that they get properly parsed
-by most Windows programs. Algorithm is ported to R from
+by most Windows programs. This function is used internally to automatically quote
+system commands, the user should normally not quote arguments manually.
+}
+\details{
+Algorithm is ported to R from
 \href{https://github.com/libuv/libuv/blob/v1.23.0/src/win/process.c#L454-L524}{libuv}.
 }
