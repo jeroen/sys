@@ -31,6 +31,6 @@ test_that("User supplied callback function", {
   }
   res <- exec_wait('whoami', std_out = add)
   expect_equal(res, 0)
-  expect_equal(trimws(rawToChar(out)), user)
+  expect_equal(as_text(out), user)
 
 })

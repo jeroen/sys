@@ -80,7 +80,7 @@ The child can be killed with \link[tools:pskill]{tools::pskill}.
 The \code{exec_internal} function is a convenience wrapper around \code{exec_wait} which
 automatically captures output streams and raises an error if execution fails.
 Upon success it returns a list with status code, and raw vectors containing
-stdout and stderr data (use \link{rawToChar} for converting to text).
+stdout and stderr data (use \link{as_text} for converting to text).
 }
 \section{Output Streams}{
 

@@ -55,7 +55,7 @@ is useful for running a server daemon or background process.
 The `exec_internal` function is a convenience wrapper around `exec_wait` which
 automatically captures output streams and raises an error if execution fails.
 Upon success it returns a list with status code, and raw vectors containing
-stdout and stderr data (use `rawToChar` for converting to text).
+stdout and stderr data (use `as_text` for converting to text).
 
 ## Output Streams:
 
@@ -72,7 +72,7 @@ types:
 
  - *connection* a writable R [connection] object such as [stdout] or [stderr]
  - *function*: callback function with one argument accepting a raw vector (use
- `rawToChar` to convert to text).
+ `as_text` to convert to text).
 
 When using `exec_background` with `std_out = TRUE` or `std_err = TRUE` on Windows,
 separate threads are used to print output. This works in RStudio and RTerm but

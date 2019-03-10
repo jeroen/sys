@@ -12,8 +12,8 @@ test_that("windows quoting arguments", {
     args <- c('/C', 'echo', 'foo bar')
     out1 <- exec_internal('cmd', args)
     out2 <- exec_internal('cmd', I(args))
-    expect_equal(trimws(rawToChar(out1$stdout)), '"foo bar"')
-    expect_equal(trimws(rawToChar(out2$stdout)), 'foo bar')
+    expect_equal(as_text(out1$stdout), '"foo bar"')
+    expect_equal(as_text(out2$stdout), 'foo bar')
   }
 })
 
