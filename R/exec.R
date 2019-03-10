@@ -45,7 +45,7 @@
 #'
 #'  - *connection* a writable R [connection] object such as [stdout] or [stderr]
 #'  - *function*: callback function with one argument accepting a raw vector (use
-#'  [rawToChar] to convert to text).
+#'  [as_text] to convert to text).
 #'
 #' When using `exec_background` with `std_out = TRUE` or `std_err = TRUE` on Windows,
 #' separate threads are used to print output. This works in RStudio and RTerm but
@@ -80,7 +80,7 @@
 #' # Capture std/out
 #' out <- exec_internal("date")
 #' print(out$status)
-#' cat(rawToChar(out$stdout))
+#' cat(as_text(out$stdout))
 #'
 #' if(nchar(Sys.which("ping"))){
 #'

@@ -1,5 +1,6 @@
 3.1
   - Windows: run programs through utils::shortPathName()
+  - New function as_text() for parsing raw vectors into text
   - Skip a unit test if the 'whoami' program is not available
 
 3.0
