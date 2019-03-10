@@ -10,7 +10,6 @@ matrix:
       sudo: required # weird problem with 'ping' in docker
     - dist: xenial
       env: R_CODECOV=true
-      env: FORCE_APPARMOR=TRUE
     - os: osx
       env: _R_CHECK_FORCE_SUGGESTS_=FALSE
     - os: osx
