@@ -1,3 +1,8 @@
+/* For SIG_BLOCK */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <Rinternals.h>
 #include <unistd.h>
 #include <sys/wait.h>
