@@ -240,6 +240,15 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
 
   //A 'job' is some sort of process container
   HANDLE job = CreateJobObject(NULL, NULL);
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION joblimits;
+  memset(&joblimits, 0, sizeof joblimits);
+  joblimits.BasicLimitInformation.LimitFlags =
+    JOB_OBJECT_LIMIT_BREAKAWAY_OK |
+    JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK |
+    JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION |
+    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+  SetInformationJobObject(job, JobObjectExtendedLimitInformation, &joblimits, sizeof joblimits);
   bail_if(!AssignProcessToJobObject(job, proc), "AssignProcessToJobObject");
   ResumeThread(thread);
   CloseHandle(thread);
@@ -282,6 +291,7 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
     warn_if(!CloseHandle(pipe_err), "CloseHandle pipe_err");
     warn_if(GetExitCodeProcess(proc, &exit_code) == 0, "GetExitCodeProcess");
     warn_if(!CloseHandle(proc), "CloseHandle proc");
+    warn_if(!CloseHandle(job), "CloseHandle job");
     res = exit_code; //if wait=TRUE, return exit code
   } else {
     //create background threads to print stdout/stderr
@@ -290,7 +300,6 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
     if(IS_TRUE(errfun))
       bail_if(!CreateThread(NULL, 0, PrintErr, pipe_err, 0, 0), "CreateThread stderr");
   }
-  CloseHandle(job);
   CloseHandle(si.hStdError);
   CloseHandle(si.hStdOutput);
   CloseHandle(si.hStdInput);
@@ -299,8 +308,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
                  CHAR(STRING_ELT(command, 0)), totaltime);
   }
   SEXP out = PROTECT(ScalarInteger(res));
-  if(!block)
+  if(!block){
     setAttrib(out, install("handle"), make_handle_ptr(proc));
+    setAttrib(out, install("job"), make_handle_ptr(job));
+  }
   UNPROTECT(1);
   return out;
 }
