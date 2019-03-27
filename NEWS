@@ -1,3 +1,7 @@
+3.2
+  - Windows: set JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE to try and kill orphaned children.
+  - Windows: set JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK to allow for nested jobs
+
 3.1
   - Windows: run programs through utils::shortPathName()
   - New function as_text() for parsing raw vectors into text
