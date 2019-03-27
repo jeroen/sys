@@ -41,6 +41,19 @@ static void warn_if(int err, const char * what){
     Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, formatError(GetLastError()));
 }
 
+static BOOL can_create_job(){
+  BOOL is_job = 0;
+  bail_if(!IsProcessInJob(GetCurrentProcess(), NULL, &is_job), "IsProcessInJob");
+  //Rprintf("Current process is %s\n", is_job ? "a job" : "not a job");
+  if(!is_job)
+    return 1;
+  JOBOBJECT_BASIC_LIMIT_INFORMATION info;
+  bail_if(!QueryInformationJobObject(NULL, JobObjectBasicLimitInformation, &info,
+          sizeof(JOBOBJECT_BASIC_LIMIT_INFORMATION), NULL), "QueryInformationJobObject");
+  return info.LimitFlags & JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK ||
+    info.LimitFlags & JOB_OBJECT_LIMIT_BREAKAWAY_OK;
+}
+
 /* Check for interrupt without long jumping */
 static void check_interrupt_fn(void *dummy) {
   R_CheckUserInterrupt();
@@ -218,7 +231,10 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
     Rf_error("Windows commands cannot be longer than 32,768 characters");
   PROCESS_INFORMATION pi = {0};
   const char * cmd = CHAR(STRING_ELT(command, 0));
-  DWORD dwCreationFlags =  CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED;
+
+  // set the process flags
+  BOOL use_job = can_create_job();
+  DWORD dwCreationFlags =  CREATE_NO_WINDOW | CREATE_SUSPENDED | CREATE_BREAKAWAY_FROM_JOB * use_job;
   /* This will cause orphans unless we install a SIGBREAK handler on the child
   if(!block)
     dwCreationFlags |= CREATE_NEW_PROCESS_GROUP; //allows sending CTRL+BREAK
@@ -240,16 +256,17 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
 
   //A 'job' is some sort of process container
   HANDLE job = CreateJobObject(NULL, NULL);
-  JOBOBJECT_EXTENDED_LIMIT_INFORMATION joblimits;
-  memset(&joblimits, 0, sizeof joblimits);
-  joblimits.BasicLimitInformation.LimitFlags =
-    JOB_OBJECT_LIMIT_BREAKAWAY_OK |
-    JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK |
-    JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION |
-    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-
-  SetInformationJobObject(job, JobObjectExtendedLimitInformation, &joblimits, sizeof joblimits);
-  bail_if(!AssignProcessToJobObject(job, proc), "AssignProcessToJobObject");
+  if(use_job){
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION joblimits;
+    memset(&joblimits, 0, sizeof joblimits);
+    joblimits.BasicLimitInformation.LimitFlags =
+      JOB_OBJECT_LIMIT_BREAKAWAY_OK |
+      JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK |
+      JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION |
+      JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    SetInformationJobObject(job, JobObjectExtendedLimitInformation, &joblimits, sizeof joblimits);
+    bail_if(!AssignProcessToJobObject(job, proc), "AssignProcessToJobObject");
+  }
   ResumeThread(thread);
   CloseHandle(thread);
   free(argv);
@@ -275,9 +292,13 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
         timeout_reached = ((end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6) > totaltime;
       }
       if(pending_interrupt() || timeout_reached){
+        running = 0;
         EnumWindows(closeWindows, pid);
-        if(!TerminateJobObject(job, -2))
-          Rf_errorcall(R_NilValue, "TerminateJobObject failed: %d", GetLastError());
+        if(use_job){
+          bail_if(!TerminateJobObject(job, -2), "TerminateJobObject");
+        } else {
+          bail_if(!TerminateProcess(proc, -2), "TerminateProcess");
+        }
         /*** TerminateJobObject kills all procs and threads
         if(!TerminateThread(thread, 99))
           Rf_errorcall(R_NilValue, "TerminateThread failed %d", GetLastError());
@@ -310,7 +331,9 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
   SEXP out = PROTECT(ScalarInteger(res));
   if(!block){
     setAttrib(out, install("handle"), make_handle_ptr(proc));
-    setAttrib(out, install("job"), make_handle_ptr(job));
+    if(use_job){
+      setAttrib(out, install("job"), make_handle_ptr(job));
+    }
   }
   UNPROTECT(1);
   return out;
