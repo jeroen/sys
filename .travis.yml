@@ -6,6 +6,7 @@ pandoc: false
 matrix:
   include:
     - dist: precise
+      r: 3.5.3
     - dist: trusty
       sudo: required # weird problem with 'ping' in docker
     - dist: xenial
