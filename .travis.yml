@@ -11,8 +11,12 @@ matrix:
     - dist: xenial
       env: R_CODECOV=true
     - os: osx
+      osx_image: xcode10.2
+    - os: osx
+      osx_image: xcode9.4
     - os: osx
       osx_image: xcode7.3
+      before_install: sed -i.bak 's/-isysroot /-I/g' $(R RHOME)/etc/Makeconf
 
 addons:
   apt:
@@ -20,8 +24,7 @@ addons:
       - iputils-ping
       - libapparmor-dev
 
-r_github_packages:
-  - jimhester/covr
+r_packages: covr
 
 after_success:
   - if [[ "${R_CODECOV}" ]]; then R -e 'covr::codecov()'; fi
