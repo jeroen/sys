@@ -11,13 +11,13 @@ test_that("exec timeout works", {
   times <- system.time({
     expect_error(exec_wait(command, args, timeout = 1.5, std_out = FALSE), "timeout")
   })
-  expect_gt(times[['elapsed']], 1.5)
+  expect_gte(times[['elapsed']], 1.5)
   expect_lt(times[['elapsed']], 2.5)
 
   # Also try with exec_internal
   times <- system.time({
     expect_error(exec_internal(command, args, timeout = 0.5), "timeout")
   })
-  expect_gt(times[['elapsed']], 0.5)
+  expect_gte(times[['elapsed']], 0.5)
   expect_lt(times[['elapsed']], 1.5)
 })
