@@ -1,3 +1,6 @@
+3.3
+  - Unix: automatially path.expand() to normalize e.g. homedir
+
 3.2
   - Windows: only use CREATE_BREAKAWAY_FROM_JOB if the process has the permission to
     do so. This fixes permission errors in certain restricted environments.

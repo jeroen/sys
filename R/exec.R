@@ -204,6 +204,9 @@ execute <- function(cmd, args, std_out, std_err, std_in, wait, timeout){
       cmd <- utils::shortPathName(path.expand(cmd))
     if(!inherits(args, 'AsIs'))
       args <- windows_quote(args)
+  } else {
+    if(!inherits(cmd, 'AsIs'))
+      cmd <- path.expand(cmd)
   }
   stopifnot(is.logical(wait))
   argv <- enc2utf8(c(cmd, args))
