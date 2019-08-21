@@ -1,5 +1,9 @@
 context("test-encoding")
 
+support_unicode_path <- function(){
+  getRversion() >= "3.6.0" && grepl("(UTF-8|1252)", Sys.getlocale('LC_CTYPE'))
+}
+
 test_that("UTF-8 encoded text arguments", {
   txt <- readLines(system.file('utf8.txt', package = 'sys', mustWork = TRUE), encoding = 'UTF-8')
   res <- sys::exec_internal('echo', txt)
@@ -11,7 +15,7 @@ test_that("UTF-8 encoded text arguments", {
 })
 
 test_that("UTF-8 filenames, binary data", {
-  skip_if(getRversion() < "3.5")
+  skip_if_not(support_unicode_path(), 'System does not support unicode paths')
   tmp <- paste(tempdir(), "\u0420\u0423\u0421\u0421\u041a\u0418\u0419.txt", sep = "/")
   tmp <- normalizePath(tmp, mustWork = FALSE)
   f <- file(tmp, 'wb')
@@ -30,7 +34,7 @@ test_that("UTF-8 filenames, binary data", {
 })
 
 test_that("UTF-8 filename as std_in", {
-  skip_if(getRversion() < "3.5")
+  skip_if_not(support_unicode_path(), 'System does not support unicode paths')
   input <- c("foo", "bar", "baz")
   txt <- readLines(system.file('utf8.txt', package = 'sys', mustWork = TRUE), encoding = 'UTF-8')
   tmp <- normalizePath(paste(tempdir(), txt, sep = "/"), mustWork = FALSE)
