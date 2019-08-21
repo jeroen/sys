@@ -11,7 +11,7 @@ Description: Drop-in replacements for the base system2() function with fine cont
     connections. Arguments on Windows automatically get encoded and quoted to work 
     on different locales.
 License: MIT + file LICENSE
-URL: https://github.com/jeroen/sys#readme
+URL: https://github.com/jeroen/sys
 BugReports: https://github.com/jeroen/sys/issues
 Encoding: UTF-8
 LazyData: true
