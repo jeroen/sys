@@ -7,13 +7,16 @@
 \alias{r_background}
 \title{Execute R from R}
 \usage{
-r_wait(args = "--vanilla", std_out = stdout(), std_err = stderr(),
-  std_in = NULL)
+r_wait(
+  args = "--vanilla",
+  std_out = stdout(),
+  std_err = stderr(),
+  std_in = NULL
+)
 
 r_internal(args = "--vanilla", std_in = NULL, error = TRUE)
 
-r_background(args = "--vanilla", std_out = TRUE, std_err = TRUE,
-  std_in = NULL)
+r_background(args = "--vanilla", std_out = TRUE, std_err = TRUE, std_in = NULL)
 }
 \arguments{
 \item{args}{command line arguments for R}
@@ -52,6 +55,7 @@ writeLines(c("x <- rnorm(100)", "mean(x)"), con = tmp)
 r_wait(std_in = tmp)
 }
 \seealso{
-Other sys: \code{\link{exec}}
+Other sys: 
+\code{\link{exec}}
 }
 \concept{sys}

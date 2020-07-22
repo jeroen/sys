@@ -17,5 +17,5 @@ splits output by (platform specific) linebreaks and allows for marking
 output with a given encoding.
 }
 \seealso{
-\link[base:charToRaw]{base::charToRaw}
+\link[base:rawConversion]{base::charToRaw}
 }

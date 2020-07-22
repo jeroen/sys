@@ -9,14 +9,24 @@
 \alias{exec_status}
 \title{Running System Commands}
 \usage{
-exec_wait(cmd, args = NULL, std_out = stdout(), std_err = stderr(),
-  std_in = NULL, timeout = 0)
+exec_wait(
+  cmd,
+  args = NULL,
+  std_out = stdout(),
+  std_err = stderr(),
+  std_in = NULL,
+  timeout = 0
+)
 
-exec_background(cmd, args = NULL, std_out = TRUE, std_err = TRUE,
-  std_in = NULL)
+exec_background(
+  cmd,
+  args = NULL,
+  std_out = TRUE,
+  std_err = TRUE,
+  std_in = NULL
+)
 
-exec_internal(cmd, args = NULL, std_in = NULL, error = TRUE,
-  timeout = 0)
+exec_internal(cmd, args = NULL, std_in = NULL, error = TRUE, timeout = 0)
 
 exec_status(pid, wait = TRUE)
 }
@@ -135,6 +145,7 @@ rm(pid)
 Base \link{system2} and \link{pipe} provide other methods for running a system
 command with output.
 
-Other sys: \code{\link{exec_r}}
+Other sys: 
+\code{\link{exec_r}}
 }
 \concept{sys}
