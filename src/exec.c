@@ -204,8 +204,11 @@ SEXP C_execute(SEXP command, SEXP args, SEXP outfun, SEXP errfun, SEXP input, SE
 
     //close all file descriptors before exit, otherwise they can segfault
     for (int i = 3; i < sysconf(_SC_OPEN_MAX); i++) {
-      if(i != failure[w])
-        close(i);
+      if(i != failure[w]){
+        int err = close(i);
+        if(i > 200 && err < 0)
+          break;
+      }
     }
 
     //prepare execv

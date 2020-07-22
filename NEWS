@@ -1,3 +1,6 @@
+3.4
+  - Fix performance bug for systems with very large _SC_OPEN_MAX, notably docker.
+
 3.3
   - Unix: automatially path.expand() to normalize e.g. homedir
   - Unix: skip unicode path test on systems without UTF-8 locale.
