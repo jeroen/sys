@@ -8,3 +8,4 @@
 ^src/Makevars$
 ^readme.md$
 ^revdep
+^\.github$
