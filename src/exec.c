@@ -31,14 +31,14 @@ void kill_process_group(int signum) {
 }
 
 /* prevent potential handlers from cleaning up exit codes */
-static void block_sigchld(){
+static void block_sigchld(void){
   sigset_t block_sigchld;
   sigemptyset(&block_sigchld);
   sigaddset(&block_sigchld, SIGCHLD);
   sigprocmask(SIG_BLOCK, &block_sigchld, NULL);
 }
 
-static void resume_sigchild(){
+static void resume_sigchild(void){
   sigset_t block_sigchld;
   sigemptyset(&block_sigchld);
   sigaddset(&block_sigchld, SIGCHLD);
@@ -112,7 +112,7 @@ void check_interrupt_fn(void *dummy) {
   R_CheckUserInterrupt();
 }
 
-int pending_interrupt() {
+int pending_interrupt(void) {
   return !(R_ToplevelExec(check_interrupt_fn, NULL));
 }
 

@@ -1,3 +1,6 @@
+3.4.1
+  - Fix strict-prototypes warnings
+
 3.4
   - Fix performance bug for systems with very large _SC_OPEN_MAX, notably docker.
 
