@@ -2,12 +2,8 @@
 
 > Portable System Utilities
 
-[![Build Status](https://travis-ci.org/jeroen/sys.svg?branch=master)](https://travis-ci.org/jeroen/sys)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/jeroen/sys?branch=master&svg=true)](https://ci.appveyor.com/project/jeroen/sys)
-[![Coverage Status](https://codecov.io/github/jeroen/sys/coverage.svg?branch=master)](https://codecov.io/github/jeroen/sys?branch=master)
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/sys)](https://cran.r-project.org/package=sys)
 [![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/sys)](https://cran.r-project.org/package=sys)
-[![GitHub Stars](https://img.shields.io/github/stars/jeroen/sys.svg?style=social&label=Github)](https://github.com/jeroen/sys)
 
 Powerful replacements for base system2 with consistent behavior across
 platforms. Supports interruption, background tasks, and full control over
