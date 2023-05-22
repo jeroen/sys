@@ -1,3 +1,6 @@
+3.4.2
+  - Fix some more strict-prototypes warnings on Windows
+
 3.4.1
   - Fix strict-prototypes warnings
 

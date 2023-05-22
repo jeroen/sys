@@ -41,7 +41,7 @@ static void warn_if(int err, const char * what){
     Rf_warningcall(R_NilValue, "System failure for: %s (%s)", what, formatError(GetLastError()));
 }
 
-static BOOL can_create_job(){
+static BOOL can_create_job(void){
   BOOL is_job = 0;
   bail_if(!IsProcessInJob(GetCurrentProcess(), NULL, &is_job), "IsProcessInJob");
   //Rprintf("Current process is %s\n", is_job ? "a job" : "not a job");
@@ -59,7 +59,7 @@ static void check_interrupt_fn(void *dummy) {
   R_CheckUserInterrupt();
 }
 
-int pending_interrupt() {
+static int pending_interrupt(void) {
   return !(R_ToplevelExec(check_interrupt_fn, NULL));
 }
 
