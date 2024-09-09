@@ -3,7 +3,7 @@ Type: Package
 Title: Powerful and Reliable Tools for Running System Commands in R
 Version: 3.4.2.9000
 Authors@R: c(person("Jeroen", "Ooms", role = c("aut", "cre"), 
-      email = "jeroen@berkeley.edu", comment = c(ORCID = "0000-0002-4035-0289")),
+      email = "jeroenooms@gmail.com", comment = c(ORCID = "0000-0002-4035-0289")),
     person("Gábor", "Csárdi", , "csardi.gabor@gmail.com", role = "ctb"))
 Description: Drop-in replacements for the base system2() function with fine control
     and consistent behavior across platforms. Supports clean interruption, timeout, 
